@@ -110,9 +110,14 @@ def calculate_brier_score(confidence_pct: float, is_correct: bool) -> float:
 
 
 def evaluate_model_predictions(
-    predictions: List[PredictionRecord], actual_match_winners: List[str], final_gold_winner: str = "South Africa"
+    predictions: List[PredictionRecord],
+    actual_match_winners: List[str],
+    final_gold_winner: Optional[str] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """Evaluate accuracy, Brier scores, and calibration metrics for each model."""
+    if final_gold_winner is None:
+        final_gold_winner = actual_match_winners[-1] if actual_match_winners else ""
+
     by_model: Dict[str, Dict[str, Any]] = {}
 
     for p in predictions:

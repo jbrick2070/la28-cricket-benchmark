@@ -8,10 +8,10 @@ import socketserver
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 try:
-    from obs_overlays import OVERLAYS
+    from la28_cricket.obs_overlays import OVERLAYS
 except ImportError:
     OVERLAYS = {}
 
@@ -344,7 +344,8 @@ def parse_log_file(log_path: Path) -> Dict[str, Any]:
         "tournament_progress": [],
         "quality_metrics": {},
         "commentary_feed": [],
-        "telemetry_history": []
+        "telemetry_history": [],
+        "run_metadata": {},
     }
     
     if not log_path.exists():
@@ -357,6 +358,8 @@ def parse_log_file(log_path: Path) -> Dict[str, Any]:
     alerts = []
     tournament = {}
     commentaries = []
+    telemetry_history = []
+    run_metadata = {}
     
     try:
         with log_path.open("r", encoding="utf-8") as f:
@@ -367,7 +370,9 @@ def parse_log_file(log_path: Path) -> Dict[str, Any]:
                     data = json.loads(line)
                     evt_type = data.get("event_type")
                     
-                    if evt_type == "OVER_EVENT":
+                    if evt_type == "RUN_START":
+                        run_metadata = data
+                    elif evt_type == "OVER_EVENT":
                         overs.append(data)
                         match_idx = data.get("match_index", 1)
                         if match_idx not in tournament:
@@ -378,10 +383,45 @@ def parse_log_file(log_path: Path) -> Dict[str, Any]:
                         winner = data.get("winner_model")
                         if winner:
                             h2h[winner] = h2h.get(winner, 0) + 1
-                            
-                            # Build commentary feed item. We assume one of the models has this text in telemetry, but for simplicity we'll just pull the verdict text or mock it if raw text isn't directly available in over event.
-                            verdict = data.get("judge", {}).get("verdict", "")
-                            commentaries.insert(0, {"model": winner, "text": verdict, "match": match_idx, "over": data.get("over_index")})
+                            winner_telemetry = next(
+                                (
+                                    entry
+                                    for entry in data.get("telemetry", [])
+                                    if entry.get("model_id") == winner
+                                ),
+                                {},
+                            )
+                            winner_quality = data.get("quality_metrics", {}).get(winner, {})
+                            commentaries.insert(
+                                0,
+                                {
+                                    "model": winner,
+                                    "desk_name": winner_telemetry.get("desk_name", winner),
+                                    "text": winner_telemetry.get("text", ""),
+                                    "match": match_idx,
+                                    "over": data.get("over_index"),
+                                    "cqi": winner_quality.get("cqi_score", 0),
+                                    "eng": winner_quality.get("engagement_score", 0),
+                                    "toks": winner_telemetry.get("tok_per_sec"),
+                                },
+                            )
+
+                        for entry in data.get("telemetry", []):
+                            telemetry_history.append(
+                                {
+                                    **entry,
+                                    "match_index": match_idx,
+                                    "over_index": data.get("over_index"),
+                                }
+                            )
+                        if data.get("surprise"):
+                            alerts.append(
+                                {
+                                    "match_index": match_idx,
+                                    "over_index": data.get("over_index"),
+                                    "text": data["surprise"],
+                                }
+                            )
                             
                         if data.get("predictions"):
                             predictions.extend(data["predictions"])
@@ -403,26 +443,51 @@ def parse_log_file(log_path: Path) -> Dict[str, Any]:
 
     latest_over = overs[-1] if overs else None
     
-    # Mocking CQI for now based on H2H as placeholders if real telemetry doesn't have it
-    quality = {}
-    for m in h2h:
-        quality[m] = {"avg_cqi": 70 + (h2h[m] % 20), "avg_engagement": 65 + (h2h[m] % 15)}
+    configured_models = run_metadata.get("models_configured", [])
+    model_a = configured_models[0] if len(configured_models) > 0 else None
+    model_b = configured_models[1] if len(configured_models) > 1 else None
+    head_to_head = {
+        "model_a": model_a,
+        "model_b": model_b,
+        "model_a_wins": h2h.get(model_a, 0),
+        "model_b_wins": h2h.get(model_b, 0),
+        "by_model": h2h,
+    }
         
     return {
         "latest_over": latest_over,
         "metrics": metrics,
         "predictions": predictions[-10:],
-        "head_to_head": h2h,
+        "head_to_head": head_to_head,
         "alerts": alerts[-5:],
         "tournament_progress": list(tournament.values()),
-        "quality_metrics": quality,
+        "quality_metrics": {
+            model_id: {
+                "avg_cqi": values.get("avg_cqi_score", 0),
+                "avg_engagement": values.get("avg_engagement_score", 0),
+            }
+            for model_id, values in metrics.items()
+        },
         "commentary_feed": commentaries[:5],
-        "telemetry_history": []
+        "telemetry_history": telemetry_history[-20:],
+        "run_metadata": run_metadata,
     }
 
 
 class DashboardHandler(http.server.BaseHTTPRequestHandler):
-    log_path = Path("logs/la28_cricket_benchmark.jsonl")
+    log_path: Optional[Path] = None
+
+    @classmethod
+    def current_log_path(cls) -> Path:
+        if cls.log_path is not None:
+            return cls.log_path
+        log_dir = Path("logs")
+        candidates = list(log_dir.glob("run_*.jsonl"))
+        if not candidates:
+            candidates = list(log_dir.glob("*.jsonl"))
+        if candidates:
+            return max(candidates, key=lambda path: path.stat().st_mtime)
+        return log_dir / "no_benchmark_run.jsonl"
 
     def _set_headers(self, content_type: str = "application/json"):
         self.send_response(200)
@@ -431,15 +496,16 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
+        current_log = self.current_log_path()
         if self.path == "/api/data":
-            data = parse_log_file(self.log_path)
+            data = parse_log_file(current_log)
             self._set_headers("application/json")
             self.wfile.write(json.dumps(data).encode("utf-8"))
         elif self.path == "/api/health":
-            size = self.log_path.stat().st_size if self.log_path.exists() else 0
+            size = current_log.stat().st_size if current_log.exists() else 0
             health_data = {
                 "status": "ok",
-                "log_file": str(self.log_path),
+                "log_file": str(current_log),
                 "log_size_bytes": size,
                 "uptime_s": int(time.time() - START_TIME)
             }
@@ -478,8 +544,8 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         return  # Suppress stdout HTTP server logging
 
 
-def run_dashboard_server(port: int = 8080, log_path: str = "logs/la28_cricket_benchmark.jsonl") -> None:
-    DashboardHandler.log_path = Path(log_path)
+def run_dashboard_server(port: int = 8080, log_path: Optional[str] = None) -> None:
+    DashboardHandler.log_path = Path(log_path) if log_path else None
     with socketserver.TCPServer(("", port), DashboardHandler) as httpd:
         print(f"LA28 Cricket Dashboard running at http://localhost:{port}")
         print("OBS Overlays available at:")
@@ -494,6 +560,6 @@ def run_dashboard_server(port: int = 8080, log_path: str = "logs/la28_cricket_be
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8080)
-    parser.add_argument("--log-path", default="logs/la28_cricket_benchmark.jsonl")
+    parser.add_argument("--log-path", default=None, help="Specific JSONL log (default: newest run in logs/)")
     args = parser.parse_args()
     run_dashboard_server(port=args.port, log_path=args.log_path)

@@ -36,17 +36,17 @@ def generate_synthetic_response(model_id: str, prompt: str) -> Tuple[str, int, i
     rand = random.Random(seed_int)
     desk_name = DESK_ORGS.get(model_id, f"Desk ({model_id})")
     
-    if "NEXT_MATCH_PREDICTION:" in prompt or "FINAL_PREDICTION:" in prompt:
+    if "Judge two fictional cricket broadcast candidates" in prompt:
+        chosen = "A" if rand.random() > 0.4 else "B"
+        score = rand.randint(7, 10)
+        text = f"WINNER: {chosen}\nSCORE: {score}/10\nREASON: Strong radio drama, crisp score updates, and vivid crowd atmosphere."
+    elif "End with two independent prediction calls" in prompt:
         text = (
             f"Fictional commentary by {desk_name}. South Africa bowls brilliantly in the middle overs. "
             f"The crowd roars as boundary catches are taken cleanly under lights.\n"
             f"NEXT_MATCH_PREDICTION: South Africa — {rand.randint(70, 95)}%\n"
             f"FINAL_PREDICTION: South Africa — {rand.randint(65, 90)}%"
         )
-    elif "Judge two fictional cricket broadcast candidates" in prompt:
-        chosen = "A" if rand.random() > 0.4 else "B"
-        score = rand.randint(7, 10)
-        text = f"WINNER: {chosen}\nSCORE: {score}/10\nREASON: Strong radio drama, crisp score updates, and vivid crowd atmosphere."
     else:
         text = (
             f"Live commentary by {desk_name}. A towering six clears the boundary fence! "
@@ -72,6 +72,14 @@ def call_inference_endpoint(
     desk_name = DESK_ORGS.get(model, model)
     if sampling_params is None:
         sampling_params = FIXED_SAMPLING_BASELINE
+    effective_sampling = {
+        "temperature": sampling_params.get("temperature", 0.2),
+        "top_p": sampling_params.get("top_p", 0.9),
+        "seed": sampling_params.get("seed", 42),
+        "presence_penalty": sampling_params.get("presence_penalty", 0),
+        "frequency_penalty": sampling_params.get("frequency_penalty", 0),
+        "max_tokens": sampling_params.get("max_tokens", 300),
+    }
 
     if dry_run:
         started = time.perf_counter()
@@ -88,6 +96,9 @@ def call_inference_endpoint(
             prompt_tokens=prompt_tok,
             tok_per_sec=round(tok_per_sec, 2),
             status="ok",
+            endpoint=endpoint,
+            attempt_count=1,
+            requested_sampling=effective_sampling,
         )
 
     chat_url = endpoint.rstrip("/") + "/chat/completions"
@@ -97,12 +108,7 @@ def call_inference_endpoint(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": sampling_params.get("temperature", 0.2),
-        "top_p": sampling_params.get("top_p", 0.9),
-        "seed": sampling_params.get("seed", 42),
-        "presence_penalty": sampling_params.get("presence_penalty", 0),
-        "frequency_penalty": sampling_params.get("frequency_penalty", 0),
-        "max_tokens": sampling_params.get("max_tokens", 300),
+        **effective_sampling,
         "stream": True,
         "stream_options": {"include_usage": True},
     }
@@ -111,13 +117,6 @@ def call_inference_endpoint(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
-    request = urllib.request.Request(
-        chat_url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers=headers,
-        method="POST",
-    )
-
     started = time.perf_counter()
     text = ""
     completion_tokens: Optional[int] = None
@@ -125,12 +124,20 @@ def call_inference_endpoint(
 
     last_exc = None
     delay = 1.0
+    attempt_count = 0
 
     for attempt in range(3):
+        attempt_count = attempt + 1
         text = ""
         completion_tokens = None
         prompt_tokens = None
         try:
+            request = urllib.request.Request(
+                chat_url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST",
+            )
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 for raw_line in response:
                     line = raw_line.decode("utf-8", errors="replace").strip()
@@ -173,6 +180,9 @@ def call_inference_endpoint(
             tok_per_sec=None,
             status="error",
             error=str(last_exc),
+            endpoint=endpoint,
+            attempt_count=attempt_count,
+            requested_sampling=effective_sampling,
         )
 
     tok_per_sec = (completion_tokens / elapsed) if (completion_tokens and elapsed > 0) else None
@@ -186,4 +196,7 @@ def call_inference_endpoint(
         prompt_tokens=prompt_tokens,
         tok_per_sec=round(tok_per_sec, 2) if tok_per_sec is not None else None,
         status="ok",
+        endpoint=endpoint,
+        attempt_count=attempt_count,
+        requested_sampling=effective_sampling,
     )

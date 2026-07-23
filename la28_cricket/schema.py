@@ -21,6 +21,10 @@ class RunMetadata:
     client_dashboard_hw: str
     models_configured: List[str]
     is_dry_run: bool = False
+    endpoints_by_role: Dict[str, str] = field(default_factory=dict)
+    judge_sampling_baseline: Dict[str, Any] = field(default_factory=dict)
+    log_path: Optional[str] = None
+    format_version: str = "1.1"
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -70,6 +74,9 @@ class ModelCallTelemetry:
     tok_per_sec: Optional[float]
     status: str  # "ok" or "error"
     error: Optional[str] = None
+    endpoint: Optional[str] = None
+    attempt_count: int = 1
+    requested_sampling: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -101,6 +108,9 @@ class OverEventRecord:
     winner_model: Optional[str]
     state_after: Dict[str, int]
     quality_metrics: Dict[str, OverQualityMetrics] = field(default_factory=dict)
+    judge_telemetry: Optional[ModelCallTelemetry] = None
+    candidate_call_order: List[str] = field(default_factory=list)
+    surprise: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -133,6 +143,7 @@ class CampaignSummaryRecord:
     total_wall_clock_s: float
     metrics_per_model: Dict[str, Dict[str, Any]]
     is_dry_run: bool
+    completion_status: str = "completed"
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)

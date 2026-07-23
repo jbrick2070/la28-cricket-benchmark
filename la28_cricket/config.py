@@ -7,7 +7,7 @@ import os
 __all__ = [
     "DEFAULT_ENDPOINT", "ENDPOINT_A", "ENDPOINT_B", "API_KEY_A", "API_KEY_B",
     "INFERENCE_SERVER_HW", "CLIENT_DASHBOARD_HW", "PROMPT_VERSION",
-    "FIXED_SAMPLING_BASELINE", "PREFERRED_MODEL_A", "PREFERRED_MODEL_B",
+    "FIXED_SAMPLING_BASELINE", "JUDGE_SAMPLING_BASELINE", "PREFERRED_MODEL_A", "PREFERRED_MODEL_B",
     "DESK_ORGS", "HERO_TEAM", "OVERS_PER_MATCH", "TOTAL_MATCHES",
     "TOTAL_TEAM_OVERS", "SCHEDULE", "SECRET_MATCH_WINNERS", "TEAM_CODES",
     "OPPONENT_VIBES", "SURPRISE_CYCLE", "get_surprise_for_over",
@@ -33,6 +33,14 @@ FIXED_SAMPLING_BASELINE: Dict[str, Any] = {
     "presence_penalty": 0,
     "frequency_penalty": 0,
     "max_tokens": 300,
+}
+
+# Presentation judging is separate from prediction scoring, but its settings are
+# still fixed and recorded for reproducibility.
+JUDGE_SAMPLING_BASELINE: Dict[str, Any] = {
+    **FIXED_SAMPLING_BASELINE,
+    "temperature": 0.1,
+    "max_tokens": 120,
 }
 
 # Preferred Remote Model IDs

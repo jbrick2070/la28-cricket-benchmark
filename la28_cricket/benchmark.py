@@ -20,6 +20,7 @@ from la28_cricket.config import (
     FIXED_SAMPLING_BASELINE,
     HERO_TEAM,
     INFERENCE_SERVER_HW,
+    JUDGE_SAMPLING_BASELINE,
     OPPONENT_VIBES,
     OVERS_PER_MATCH,
     PREFERRED_MODEL_A,
@@ -39,6 +40,7 @@ from la28_cricket.metrics import (
     calculate_engagement_score,
     detect_hallucinations,
     calculate_prediction_stability,
+    calculate_telemetry_summary,
 )
 from la28_cricket.models import call_inference_endpoint
 from la28_cricket.schema import (
@@ -68,13 +70,15 @@ class LA28CricketBenchmark:
         model_a: str = PREFERRED_MODEL_A,
         model_b: str = PREFERRED_MODEL_B,
         judge_model: Optional[str] = None,
-        log_path: str = "logs/la28_cricket_benchmark.jsonl",
+        log_path: Optional[str] = None,
         dry_run: bool = False,
         delay_seconds: float = 0.5,
         endpoint_a: Optional[str] = None,
         endpoint_b: Optional[str] = None,
         api_key_a: Optional[str] = None,
         api_key_b: Optional[str] = None,
+        judge_endpoint: Optional[str] = None,
+        judge_api_key: Optional[str] = None,
         domain: str = "cricket",
     ) -> None:
         self.endpoint = endpoint
@@ -84,14 +88,36 @@ class LA28CricketBenchmark:
         self.api_key_b = api_key_b or API_KEY_B
         self.model_a = model_a
         self.model_b = model_b
+        if self.model_a == self.model_b:
+            raise ValueError("Desk A and Desk B must use different model IDs")
         self.judge_model = judge_model or model_b
-        self.log_path = Path(log_path)
+        if judge_endpoint is not None:
+            self.judge_endpoint = judge_endpoint
+        elif self.judge_model == self.model_a:
+            self.judge_endpoint = self.endpoint_a
+        elif self.judge_model == self.model_b:
+            self.judge_endpoint = self.endpoint_b
+        else:
+            self.judge_endpoint = self.endpoint
+        if judge_api_key is not None:
+            self.judge_api_key = judge_api_key
+        elif self.judge_model == self.model_a:
+            self.judge_api_key = self.api_key_a
+        elif self.judge_model == self.model_b:
+            self.judge_api_key = self.api_key_b
+        else:
+            self.judge_api_key = None
         self.dry_run = dry_run
         self.delay_seconds = delay_seconds
         self.domain = domain.lower()
 
         self.run_id = f"run_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        self.log_path = Path(log_path) if log_path else Path("logs") / f"{self.run_id}.jsonl"
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.log_path.exists() and self.log_path.stat().st_size > 0:
+            raise FileExistsError(
+                f"Refusing to append to existing benchmark log: {self.log_path}"
+            )
 
         self.all_predictions: List[PredictionRecord] = []
         self.all_telemetry: List[ModelCallTelemetry] = []
@@ -105,6 +131,11 @@ class LA28CricketBenchmark:
     def run_campaign(self, max_overs_override: Optional[int] = None) -> Dict[str, Any]:
         """Execute campaign across 7 matches (140 total team overs)."""
         start_time = time.perf_counter()
+        total_target_overs = max_overs_override if max_overs_override is not None else TOTAL_TEAM_OVERS
+        if not 0 <= total_target_overs <= TOTAL_TEAM_OVERS:
+            raise ValueError(
+                f"overs must be between 0 and {TOTAL_TEAM_OVERS}, got {total_target_overs}"
+            )
 
         run_meta = RunMetadata(
             run_id=self.run_id,
@@ -116,16 +147,25 @@ class LA28CricketBenchmark:
             client_dashboard_hw=CLIENT_DASHBOARD_HW,
             models_configured=[self.model_a, self.model_b, self.judge_model],
             is_dry_run=self.dry_run,
+            endpoints_by_role={
+                "desk_a": self.endpoint_a,
+                "desk_b": self.endpoint_b,
+                "judge": self.judge_endpoint,
+            },
+            judge_sampling_baseline=JUDGE_SAMPLING_BASELINE,
+            log_path=str(self.log_path),
         )
         self._write_record(run_meta.to_dict())
 
-        total_target_overs = max_overs_override if max_overs_override is not None else TOTAL_TEAM_OVERS
         score = {"runs": 0, "wickets": 0, "balls": 0}
         previous_broadcast = "No previous ball: invent the opening delivery."
         
         match_index = 1
         over_in_match = 0
         total_overs_run = 0
+        completed_matches = 0
+        interrupted = False
+        completion_status = "completed"
 
         try:
             while total_overs_run < total_target_overs:
@@ -134,6 +174,7 @@ class LA28CricketBenchmark:
 
                 phase, opponent = SCHEDULE[min(match_index - 1, len(SCHEDULE) - 1)]
                 opponent_vibe = OPPONENT_VIBES.get(opponent, "enthusiastic supporters")
+                surprise = get_surprise_for_over(match_index, over_in_match)
                 state_before = f"{score['runs']}/{score['wickets']} after {score['balls']} balls"
 
                 cultural_guidance = (
@@ -151,17 +192,25 @@ class LA28CricketBenchmark:
                     f"Match {match_index} of {TOTAL_MATCHES}, over {over_in_match} of {OVERS_PER_MATCH}.\n"
                     f"Current Match: {HERO_TEAM} {TEAM_CODES.get(HERO_TEAM, '[?]')} vs {opponent} {TEAM_CODES.get(opponent, '[?]')}.\n"
                     f"Phase: {phase}. Opponent Spotlight: {opponent_vibe}.\n"
-                    f"Surprise instruction: {get_surprise_for_over(match_index, over_in_match)}.\n"
+                    f"Surprise instruction: {surprise}.\n"
                     f"{cultural_guidance}\n"
                     f"Current Score: {state_before}.\n"
                     f"Previous broadcast snippet: {safe_slice(previous_broadcast)}\n"
                     f"Give exactly one over (six deliveries), score update, and crowd atmosphere. Do not claim this is real news."
                 )
 
-                telemetry_list: List[ModelCallTelemetry] = []
+                telemetry_by_model: Dict[str, ModelCallTelemetry] = {}
                 over_predictions: List[PredictionRecord] = []
 
-                for model_id in (self.model_a, self.model_b):
+                # Counterbalance call order to prevent one desk from always receiving
+                # the warmer cache, cooler GPU, or first provider slot.
+                candidate_call_order = (
+                    [self.model_a, self.model_b]
+                    if total_overs_run % 2 == 1
+                    else [self.model_b, self.model_a]
+                )
+
+                for model_id in candidate_call_order:
                     desk_name = DESK_ORGS.get(model_id, model_id)
                     desk_prompt = f"You are broadcasting for {desk_name}.\n" + base_prompt
 
@@ -191,7 +240,7 @@ class LA28CricketBenchmark:
                         sampling_params=FIXED_SAMPLING_BASELINE,
                         dry_run=self.dry_run,
                     )
-                    telemetry_list.append(t_res)
+                    telemetry_by_model[model_id] = t_res
                     self.all_telemetry.append(t_res)
 
                     if t_res.text:
@@ -206,6 +255,49 @@ class LA28CricketBenchmark:
                         over_predictions.extend(preds)
                         self.all_predictions.extend(preds)
 
+                # Canonical A/B ordering is retained for judging and logs even though
+                # execution order is counterbalanced.
+                telemetry_list = [
+                    telemetry_by_model[self.model_a],
+                    telemetry_by_model[self.model_b],
+                ]
+                failed_candidates = [
+                    result.model_id
+                    for result in telemetry_list
+                    if result.status != "ok" or not result.text.strip()
+                ]
+                if failed_candidates:
+                    raise RuntimeError(
+                        "Benchmark stopped because candidate inference failed for: "
+                        + ", ".join(failed_candidates)
+                    )
+
+                quality_metrics: Dict[str, OverQualityMetrics] = {}
+                for result in telemetry_list:
+                    model_predictions = [
+                        prediction
+                        for prediction in self.all_predictions
+                        if prediction.model_id == result.model_id
+                        and prediction.match_index == match_index
+                    ]
+                    stability_by_type = [
+                        calculate_prediction_stability(
+                            [
+                                prediction
+                                for prediction in model_predictions
+                                if prediction.prediction_type == prediction_type
+                            ]
+                        )
+                        for prediction_type in ("NEXT_MATCH", "FINAL")
+                    ]
+                    quality_metrics[result.model_id] = OverQualityMetrics(
+                        cqi_score=calculate_commentary_quality(result.text),
+                        engagement_score=calculate_engagement_score(result.text),
+                        hallucination_flags=detect_hallucinations(result.text, state_before),
+                        prediction_stability=max(stability_by_type, default=0.0),
+                    )
+                self.all_quality_metrics.append(quality_metrics)
+
                 # Judge call for commentary selection
                 judge_sys = "You are a senior sports broadcast producer judging commentary quality."
                 judge_user = (
@@ -219,17 +311,36 @@ class LA28CricketBenchmark:
                     model=self.judge_model,
                     system_prompt=judge_sys,
                     user_prompt=judge_user,
-                    endpoint=self.endpoint,
-                    sampling_params={"temperature": 0.1, "max_tokens": 120},
+                    endpoint=self.judge_endpoint,
+                    api_key=self.judge_api_key,
+                    sampling_params=JUDGE_SAMPLING_BASELINE,
                     dry_run=self.dry_run,
                 )
 
                 winner_match = re.search(r"WINNER:\s*([AB])", judge_res.text, re.IGNORECASE)
-                winner_idx = 0 if (winner_match and winner_match.group(1).upper() == "A") else 1
+                if judge_res.status == "ok" and winner_match:
+                    winner_idx = 0 if winner_match.group(1).upper() == "A" else 1
+                else:
+                    # A failed or malformed presentation judge must never silently
+                    # favor Desk B. Fall back to the deterministic local rubric.
+                    rubric_scores = [
+                        (
+                            quality_metrics[result.model_id].cqi_score
+                            + quality_metrics[result.model_id].engagement_score
+                        )
+                        for result in telemetry_list
+                    ]
+                    winner_idx = 0 if rubric_scores[0] >= rubric_scores[1] else 1
+                    judge_res.text = (
+                        f"FALLBACK: deterministic CQI+engagement rubric selected "
+                        f"{'A' if winner_idx == 0 else 'B'}"
+                    )
                 chosen_telemetry = telemetry_list[winner_idx]
                 chosen_text = chosen_telemetry.text if chosen_telemetry.text else telemetry_list[0].text
 
-                self.head_to_head[chosen_telemetry.model_id] += 1
+                self.head_to_head[chosen_telemetry.model_id] = (
+                    self.head_to_head.get(chosen_telemetry.model_id, 0) + 1
+                )
 
                 # Update score state
                 score["balls"] += 6
@@ -240,23 +351,6 @@ class LA28CricketBenchmark:
                     score["wickets"] = int(found.group(2))
                 else:
                     score["runs"] += max(2, len(chosen_text.split()) // 20)
-
-                # Compute and store quality metrics
-                quality_metrics: Dict[str, OverQualityMetrics] = {}
-                for t_res in telemetry_list:
-                    cqi = calculate_commentary_quality(t_res.text) if t_res.text else 0
-                    eng = calculate_engagement_score(t_res.text) if t_res.text else 0
-                    hallucinations = detect_hallucinations(t_res.text, state_before) if t_res.text else []
-                    # Filter predictions by this model, match and over
-                    model_preds = [p for p in self.all_predictions if p.model_id == t_res.model_id and p.match_index == match_index]
-                    stability = calculate_prediction_stability(model_preds) if model_preds else 0.0
-                    quality_metrics[t_res.model_id] = OverQualityMetrics(
-                        cqi_score=cqi,
-                        engagement_score=eng,
-                        hallucination_flags=hallucinations,
-                        prediction_stability=stability,
-                    )
-                self.all_quality_metrics.append(quality_metrics)
 
                 cqi_winner = quality_metrics[chosen_telemetry.model_id].cqi_score
                 print(f"Match {match_index} Over {over_in_match} | Score: {score['runs']}/{score['wickets']} | Winner: {chosen_telemetry.desk_name} | CQI: {cqi_winner}")
@@ -279,6 +373,9 @@ class LA28CricketBenchmark:
                     winner_model=chosen_telemetry.model_id,
                     state_after=score.copy(),
                     quality_metrics=quality_metrics,
+                    judge_telemetry=judge_res,
+                    candidate_call_order=candidate_call_order,
+                    surprise=None if surprise.startswith("none;") else surprise,
                 )
                 self._write_record(over_record.to_dict())
 
@@ -288,7 +385,11 @@ class LA28CricketBenchmark:
                 if over_in_match >= OVERS_PER_MATCH:
                     actual_winner = SECRET_MATCH_WINNERS[match_index - 1]
                     match_preds = [p for p in self.all_predictions if p.match_index == match_index]
-                    eval_summary = evaluate_model_predictions(match_preds, [actual_winner])
+                    eval_summary = evaluate_model_predictions(
+                        match_preds,
+                        SECRET_MATCH_WINNERS[:match_index],
+                        SECRET_MATCH_WINNERS[-1],
+                    )
 
                     match_rec = MatchResultRecord(
                         run_id=self.run_id,
@@ -301,6 +402,7 @@ class LA28CricketBenchmark:
                     )
                     self._write_record(match_rec.to_dict())
 
+                    completed_matches += 1
                     match_index += 1
                     over_in_match = 0
                     score = {"runs": 0, "wickets": 0, "balls": 0}
@@ -310,7 +412,12 @@ class LA28CricketBenchmark:
                     time.sleep(self.delay_seconds)
 
         except KeyboardInterrupt:
+            interrupted = True
+            completion_status = "interrupted"
             print("\nCampaign interrupted! Saving partial summary...")
+        except Exception:
+            completion_status = "failed"
+            raise
         finally:
             elapsed_total = time.perf_counter() - start_time
             metrics_eval = evaluate_model_predictions(self.all_predictions, SECRET_MATCH_WINNERS)
@@ -342,16 +449,24 @@ class LA28CricketBenchmark:
                 h2h_wins = self.head_to_head.get(mid, 0)
                 metrics_eval[mid]["head_to_head_wins"] = h2h_wins
                 metrics_eval[mid]["head_to_head_win_pct"] = round(h2h_wins / total_judged * 100, 1) if total_judged > 0 else 0.0
+                metrics_eval[mid].update(
+                    calculate_telemetry_summary(
+                        [result for result in self.all_telemetry if result.model_id == mid]
+                    )
+                )
 
             campaign_rec = CampaignSummaryRecord(
                 run_id=self.run_id,
                 timestamp=iso_timestamp(),
-                total_matches=min(match_index, TOTAL_MATCHES),
+                total_matches=completed_matches,
                 total_overs=total_overs_run,
                 total_wall_clock_s=round(elapsed_total, 2),
                 metrics_per_model=metrics_eval,
                 is_dry_run=self.dry_run,
+                completion_status=completion_status,
             )
             self._write_record(campaign_rec.to_dict())
 
-            return campaign_rec.to_dict()
+        if interrupted:
+            raise KeyboardInterrupt
+        return campaign_rec.to_dict()
