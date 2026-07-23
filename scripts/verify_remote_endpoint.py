@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Endpoint verification tool to query /v1/models on RTX 4060 and check local 5080 resident status."""
+"""Endpoint verification tool to query /v1/models on target inference server and check local environment status."""
 from __future__ import annotations
 
 import argparse
@@ -14,28 +14,28 @@ from la28_cricket.config import DEFAULT_ENDPOINT, PREFERRED_MODEL_A, PREFERRED_M
 from la28_cricket.models import query_remote_models
 
 
-def check_local_5080_status(json_output=False) -> dict | None:
-    """Inspect local LM Studio status using lms ps --json if lms CLI is installed."""
+def check_local_lms_status(json_output=False) -> dict | None:
+    """Inspect local LM Studio / LLM provider status using lms ps --json if lms CLI is installed."""
     lms_bin = shutil.which("lms")
     if not lms_bin:
         if not json_output:
-            print("[5080 Local Check] 'lms' CLI tool not found in PATH; skipping local status query.")
+            print("[Local LMS Check] 'lms' CLI tool not found in PATH; skipping local status query.")
         return None
 
     try:
         res = subprocess.run([lms_bin, "ps", "--json"], capture_output=True, text=True, timeout=5)
         if res.returncode == 0:
             if not json_output:
-                print("[5080 Local Check] Resident Local LM Studio Models:")
+                print("[Local LMS Check] Resident Local LM Studio Models:")
                 print(res.stdout)
             import json
             return json.loads(res.stdout)
         else:
             if not json_output:
-                print(f"[5080 Local Check] lms ps returned code {res.returncode}: {res.stderr}")
+                print(f"[Local LMS Check] lms ps returned code {res.returncode}: {res.stderr}")
     except Exception as exc:
         if not json_output:
-            print(f"[5080 Local Check] Failed to query local lms status: {exc}")
+            print(f"[Local LMS Check] Failed to query local lms status: {exc}")
     return None
 
 
@@ -56,7 +56,7 @@ def main() -> int:
         out_dict["models"] = remote_models
         
         if not args.json:
-            print(f"\n[4060 Remote Endpoint] Query successful! Found {len(remote_models)} available models:")
+            print(f"\n[Inference Endpoint] Query successful! Found {len(remote_models)} available models:")
             for m in remote_models:
                 is_pref = " (PREFERRED)" if m in (PREFERRED_MODEL_A, PREFERRED_MODEL_B) else ""
                 print(f"  - {m}{is_pref}")
@@ -75,19 +75,19 @@ def main() -> int:
             out_dict["status"] = "missing_models"
         else:
             if not args.json:
-                print("\nSUCCESS: All preferred benchmark model IDs are present on remote 4060 server.")
+                print("\nSUCCESS: All preferred benchmark model IDs are present on target inference server.")
             out_dict["status"] = "ok"
 
     except Exception as exc:
         if not args.json:
-            print(f"\nERROR: Failed to connect to remote 4060 endpoint at {args.endpoint}: {exc}")
+            print(f"\nERROR: Failed to connect to inference endpoint at {args.endpoint}: {exc}")
         out_dict["status"] = "error"
         out_dict["error_message"] = str(exc)
 
     if not args.json:
         print("\n--- Local Environment Status ---")
         
-    local_status = check_local_5080_status(args.json)
+    local_status = check_local_lms_status(args.json)
     out_dict["local_status"] = local_status
 
     if not args.json:

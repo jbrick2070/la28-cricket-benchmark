@@ -108,7 +108,7 @@ la28-cricket-benchmark/
 │   └── obs_overlays.py                # Broadcast overlay web server for OBS integration
 ├── scripts/                           # CLI tools (exposed via pyproject.toml)
 │   ├── run_benchmark.py               # Main launcher (--dry-run, --overs, --endpoint)
-│   ├── verify_remote_endpoint.py      # Health-check remote RTX 4060
+│   ├── verify_remote_endpoint.py      # Health-check target inference endpoint
 │   └── import_official_scorecard.py   # Evaluate predictions against official scorecards
 ├── tests/                             # Automated test suite
 │   ├── test_config.py                 # Schedule, surprises, environment variables
@@ -188,11 +188,11 @@ When running on port `8081` (default):
 
 ## 🚀 Quick Start & Verification
 
-### 1. Verify Remote Endpoint Health
-Before starting a live run on the remote RTX 4060 server (`http://10.55.0.2:1234/v1`):
+### 1. Verify Endpoint Health
+Before starting a live run on an inference server (e.g., `http://localhost:1234/v1`):
 
 ```bash
-la28-verify-endpoint --endpoint http://10.55.0.2:1234/v1
+la28-verify-endpoint --endpoint http://localhost:1234/v1
 ```
 
 ### 2. Run a Benchmark Campaign (with OBS Overlays)
