@@ -1,0 +1,82 @@
+"""Configuration, schedule, baseline parameters, and constants for LA28 Cricket Benchmark."""
+from __future__ import annotations
+
+from typing import Any, Dict, List, Tuple
+
+# Inference Server & Client Specs
+DEFAULT_ENDPOINT = "http://10.55.0.2:1234/v1"
+INFERENCE_SERVER_HW = "Remote RTX 4060"
+CLIENT_DASHBOARD_HW = "Lenovo RTX 5080"
+
+# Fixed Prompt & Sampling Baseline
+PROMPT_VERSION = "v1.0"
+FIXED_SAMPLING_BASELINE: Dict[str, Any] = {
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "seed": 42,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "max_tokens": 300,
+}
+
+# Preferred Remote Model IDs
+PREFERRED_MODEL_A = "qwen/qwen2.5-coder-14b"
+PREFERRED_MODEL_B = "qwen/qwen3-coder-30b"
+
+# Broadcast Desks (Independent Models)
+DESK_ORGS = {
+    PREFERRED_MODEL_A: "Qwen2.5 — Southern Hemisphere Sports Network",
+    PREFERRED_MODEL_B: "Qwen3 — Olympic Cricket Analysis Desk",
+}
+
+# Tournament Format
+HERO_TEAM = "South Africa"
+OVERS_PER_MATCH = 20
+TOTAL_MATCHES = 7
+TOTAL_TEAM_OVERS = OVERS_PER_MATCH * TOTAL_MATCHES  # 140 team overs total
+
+# Fictional 7-Match Campaign Schedule
+SCHEDULE: List[Tuple[str, str]] = [
+    ("Group match 1", "Australia"),
+    ("Group match 2", "Great Britain (via England)"),
+    ("Group match 3", "India"),
+    ("Group match 4", "Qualifier 5"),
+    ("Group match 5", "Qualifier 6"),
+    ("Semifinal", "India"),
+    ("Gold-medal final", "Australia"),
+]
+
+# Simulated Fictional Ground Truth Winners
+SECRET_MATCH_WINNERS: List[str] = ["South Africa"] * TOTAL_MATCHES
+
+# Cultural Presentation & Codes
+TEAM_CODES: Dict[str, str] = {
+    "South Africa": "[ZA]",
+    "Australia": "[AUS]",
+    "Great Britain (via England)": "[GB]",
+    "India": "[IND]",
+    "Qualifier 5": "[Q5]",
+    "Qualifier 6": "[Q6]",
+}
+
+OPPONENT_VIBES: Dict[str, str] = {
+    "Australia": "green-and-gold flags, traveling supporters, and a sharp competitive roar",
+    "Great Britain (via England)": "Union flags, red-white-blue scarves, and a proud steady chant",
+    "India": "blue shirts, tricolor flags, drums, and a huge wave of coordinated cheers",
+    "Qualifier 5": "a neutral Olympic crowd while the qualifying nation is still unknown",
+    "Qualifier 6": "a neutral Olympic crowd while the qualifying nation is still unknown",
+}
+
+SURPRISE_CYCLE: List[str] = [
+    "a mysterious coach appears at the boundary rope",
+    "two completely ordinary-looking men in sleepwear sit on a couch near the commentary area",
+    "a silent spaceship crosses the night sky above the stadium",
+    "an intelligent two-headed spaceship character offers an impossible but thoughtful fielding tip",
+]
+
+
+def get_surprise_for_over(match_no: int, over_no: int) -> str:
+    """Return the current over surprise element, if triggered; surprises never affect match outcomes."""
+    if over_no in (4, 9, 15, 19):
+        return SURPRISE_CYCLE[(match_no + over_no) % len(SURPRISE_CYCLE)]
+    return "none; keep the broadcast focused on cricket"

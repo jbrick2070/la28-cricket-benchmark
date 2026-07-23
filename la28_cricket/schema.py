@@ -1,0 +1,134 @@
+"""Structured JSONL schema definitions for benchmark logging, provenance, and auditability."""
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+
+def iso_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+@dataclass
+class RunMetadata:
+    run_id: str
+    timestamp: str
+    endpoint: str
+    prompt_version: str
+    sampling_baseline: Dict[str, Any]
+    inference_server_hw: str
+    client_dashboard_hw: str
+    models_configured: List[str]
+    is_dry_run: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = asdict(self)
+        data["event_type"] = "RUN_START"
+        return data
+
+
+@dataclass
+class PredictionRecord:
+    model_id: str
+    desk_name: str
+    prediction_type: str  # "NEXT_MATCH" or "FINAL"
+    predicted_team: str
+    confidence_pct: float
+    raw_text: str
+    match_index: int
+    over_index: int
+    timestamp: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class ModelCallTelemetry:
+    model_id: str
+    desk_name: str
+    text: str
+    elapsed_s: float
+    completion_tokens: Optional[int]
+    prompt_tokens: Optional[int]
+    tok_per_sec: Optional[float]
+    status: str  # "ok" or "error"
+    error: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class OverEventRecord:
+    timestamp: str
+    run_id: str
+    match_index: int
+    over_index: int
+    phase: str
+    hero_team: str
+    opponent_team: str
+    state_before: str
+    telemetry: List[ModelCallTelemetry]
+    predictions: List[PredictionRecord]
+    judge_model: str
+    judge_verdict: str
+    judge_elapsed_s: float
+    winner_model: Optional[str]
+    state_after: Dict[str, int]
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = {
+            "event_type": "OVER_EVENT",
+            "timestamp": self.timestamp,
+            "run_id": self.run_id,
+            "match_index": self.match_index,
+            "over_index": self.over_index,
+            "phase": self.phase,
+            "hero_team": self.hero_team,
+            "opponent_team": self.opponent_team,
+            "state_before": self.state_before,
+            "telemetry": [t.to_dict() for t in self.telemetry],
+            "predictions": [p.to_dict() for p in self.predictions],
+            "judge": {
+                "model": self.judge_model,
+                "verdict": self.judge_verdict,
+                "elapsed_s": self.judge_elapsed_s,
+            },
+            "winner_model": self.winner_model,
+            "state_after": self.state_after,
+        }
+        return data
+
+
+@dataclass
+class MatchResultRecord:
+    run_id: str
+    timestamp: str
+    match_index: int
+    phase: str
+    opponent: str
+    actual_winner: str
+    predictions_evaluation: Dict[str, Any]
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = asdict(self)
+        data["event_type"] = "MATCH_RESOLVED"
+        return data
+
+
+@dataclass
+class CampaignSummaryRecord:
+    run_id: str
+    timestamp: str
+    total_matches: int
+    total_overs: int
+    total_wall_clock_s: float
+    metrics_per_model: Dict[str, Dict[str, Any]]
+    is_dry_run: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = asdict(self)
+        data["event_type"] = "CAMPAIGN_SUMMARY"
+        return data
