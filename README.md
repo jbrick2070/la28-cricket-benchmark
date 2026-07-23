@@ -1,8 +1,8 @@
 # LA28 Women's Cricket LLM Benchmark
 
 [![Benchmark Status](https://img.shields.io/badge/LA28--Cricket--Benchmark-Standalone-brightgreen)](#)
-[![Hardware](https://img.shields.io/badge/Inference-RTX--4060--Server-blue)](#)
-[![Client](https://img.shields.io/badge/Dashboard-RTX--5080--Client-purple)](#)
+[![Compatibility](https://img.shields.io/badge/API-OpenAI--Compatible-blue)](#)
+[![LLMs Supported](https://img.shields.io/badge/Models-Any--LLM-purple)](#)
 
 ## 📌 Crucial Disclaimers & Fair Usage
 
@@ -10,13 +10,11 @@
 2. **Simulated Ground Truth**: Current tournament results are **simulated ground truth only**.
 3. **No Official LA28 Winner**: There is **no official LA28 cricket winner** until the real 2028 Olympic matches occur in Los Angeles.
 4. **Future Scorecard Importable**: Future official 2028 scorecards can be imported into this repository (`la28-import-scorecard`) and evaluated against locked, immutable model predictions.
-5. **Independent Broadcast Desks**: Two independent broadcast desks/models are evaluated fairly:
-   - **Desk A (`qwen/qwen2.5-coder-14b`)**: *Southern Hemisphere Sports Network*
-   - **Desk B (`qwen/qwen3-coder-30b`)**: *Olympic Cricket Analysis Desk*
-6. **Zero Model Leakage**: Desk A and Desk B predictions and commentary are generated in strict isolation. Neither desk can see or influence the other desk's prompt, outputs, or predictions.
-7. **Hardware Boundary**:
-   - **Remote RTX 4060**: Acts strictly as the **LLM inference server** hosting LM Studio at `http://10.55.0.2:1234/v1`.
-   - **Lenovo RTX 5080**: Acts only as the **client / dashboard machine** running orchestration, logging, and metrics visualization. Local models on the 5080 are never used for benchmark evaluation calls.
+5. **Universal LLM & Hardware Compatibility**: This benchmark connects to **ANY OpenAI-compatible API endpoint** (`http://localhost:1234/v1`, Ollama, LM Studio, vLLM, LocalAI, Aphrodite, OpenAI API, etc.) running on **ANY hardware** (Mac, Windows, Linux, local GPUs, cloud instances, or CPUs).
+6. **Independent Broadcast Desks**: Two independent broadcast desks/models are evaluated fairly:
+   - **Desk A**: Configurable LLM (Default: `qwen/qwen2.5-coder-14b`) — *Southern Hemisphere Sports Network*
+   - **Desk B**: Configurable LLM (Default: `qwen/qwen3-coder-30b`) — *Olympic Cricket Analysis Desk*
+7. **Zero Model Leakage**: Desk A and Desk B predictions and commentary are generated in strict isolation. Neither desk can see or influence the other desk's prompt, outputs, or predictions.
 8. **OBS is Optional**: OBS is an optional visual streaming adapter and is **not a core dependency**.
 9. **Fictional Elements**: The fictional broadcast story arc may feature recurring surprises (e.g. a boundary couch, two ordinary men in sleepwear, a passing spaceship, or an intelligent two-headed spaceship character giving fielding advice). These creative narrative elements **never affect match scoring or outcome determination**.
 
@@ -63,17 +61,19 @@ To ensure strict fairness, repeatability, and non-misleading comparison, all mod
 }
 ```
 
-Prior to running live benchmark calls, check your endpoint using `la28-verify-endpoint` to confirm exact active model IDs returned by the RTX 4060 inference server.
+Prior to running live benchmark calls, check your endpoint using `la28-verify-endpoint` to confirm exact active model IDs returned by your inference server.
 
 ---
 
 ## 🌍 Environment Variables
 
-You can override default configurations via environment variables:
+You can configure any endpoint, model ID, or hardware description via environment variables:
 
-- `LA28_ENDPOINT`: Override the default `http://10.55.0.2:1234/v1` OpenAI-compatible inference endpoint.
-- `LA28_MODEL_A`: Override the preferred model ID for Desk A (default: `qwen/qwen2.5-coder-14b`).
-- `LA28_MODEL_B`: Override the preferred model ID for Desk B (default: `qwen/qwen3-coder-30b`).
+- `LA28_ENDPOINT`: Override the inference endpoint URL (default: `http://localhost:1234/v1`).
+- `LA28_MODEL_A`: Set model ID for Desk A (default: `qwen/qwen2.5-coder-14b` or any active model ID).
+- `LA28_MODEL_B`: Set model ID for Desk B (default: `qwen/qwen3-coder-30b` or any active model ID).
+- `LA28_SERVER_HW`: Set custom inference server label (default: `OpenAI-Compatible Inference Server`).
+- `LA28_CLIENT_HW`: Set custom client/dashboard label (default: `Benchmark Client Machine`).
 
 ---
 

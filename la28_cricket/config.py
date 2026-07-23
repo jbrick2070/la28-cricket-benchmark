@@ -14,9 +14,9 @@ __all__ = [
 ]
 
 # Inference Server & Client Specs
-DEFAULT_ENDPOINT = os.getenv("LA28_ENDPOINT", "http://10.55.0.2:1234/v1")
-INFERENCE_SERVER_HW = "Remote RTX 4060"
-CLIENT_DASHBOARD_HW = "Lenovo RTX 5080"
+DEFAULT_ENDPOINT = os.getenv("LA28_ENDPOINT", "http://localhost:1234/v1")
+INFERENCE_SERVER_HW = os.getenv("LA28_SERVER_HW", "OpenAI-Compatible Inference Server")
+CLIENT_DASHBOARD_HW = os.getenv("LA28_CLIENT_HW", "Benchmark Client Machine")
 
 # Fixed Prompt & Sampling Baseline
 PROMPT_VERSION = "v1.0"
