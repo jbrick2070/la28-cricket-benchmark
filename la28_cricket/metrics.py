@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import math
+import statistics
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from la28_cricket.schema import PredictionRecord
+from la28_cricket.config import TEAM_CODES, CRICKET_TERMS, SENSORY_WORDS, REAL_PLAYER_NAMES
 
 
 def parse_predictions_from_text(
@@ -66,17 +68,37 @@ def is_team_match(predicted: str, actual: str) -> bool:
     """Flexible check for team names (e.g. 'South Africa' vs 'ZA' vs 'South Africa [ZA]')."""
     pred_low = predicted.lower()
     act_low = actual.lower()
+
     if pred_low == act_low:
         return True
-    if "south africa" in pred_low and "south africa" in act_low:
-        return True
-    if "australia" in pred_low and "australia" in act_low:
-        return True
-    if "india" in pred_low and "india" in act_low:
-        return True
-    gb_terms = ("great britain", "england", "gb")
-    if any(term in pred_low for term in gb_terms) and any(term in act_low for term in gb_terms):
-        return True
+
+    # Additional aliases for flexible matching
+    _ALIASES = {
+        "great britain": ["england", "gb", "great britain (via england)"],
+        "england": ["great britain", "gb", "great britain (via england)"],
+        "gb": ["great britain", "england", "great britain (via england)"],
+        "south africa": ["za"],
+        "australia": ["aus"],
+        "india": ["ind"],
+    }
+
+    for team_name, code in TEAM_CODES.items():
+        team_low = team_name.lower()
+        code_low = code.lower().strip('[]')
+
+        pred_has = team_low in pred_low or code_low in pred_low
+        act_has = team_low in act_low or code_low in act_low
+
+        if pred_has and act_has:
+            return True
+
+    # Check aliases: if predicted and actual resolve to the same canonical team
+    for canonical, aliases in _ALIASES.items():
+        pred_match = canonical in pred_low or any(a in pred_low for a in aliases)
+        act_match = canonical in act_low or any(a in act_low for a in aliases)
+        if pred_match and act_match:
+            return True
+
     return False
 
 
@@ -123,6 +145,9 @@ def evaluate_model_predictions(
             by_model[model]["final_total"] += 1
             if correct:
                 by_model[model]["final_correct"] += 1
+            brier = calculate_brier_score(p.confidence_pct, correct)
+            by_model[model]["brier_scores"].append(brier)
+            by_model[model]["confidences"].append(p.confidence_pct)
 
     summary: Dict[str, Dict[str, Any]] = {}
     for model, stats in by_model.items():
@@ -170,3 +195,89 @@ def calculate_telemetry_summary(telemetry_list: List[Any]) -> Dict[str, Any]:
         "avg_tok_per_sec": round(sum(tok_rates) / len(tok_rates), 2) if tok_rates else 0.0,
         "error_count": errors,
     }
+
+def calculate_commentary_quality(text: str) -> int:
+    """CQI Score 0-100: terminology, score format, crowd atmosphere, narrative."""
+    lowered = text.lower()
+    score = 0
+    
+    # Terminology (up to 40 pts)
+    terms_found = sum(1 for t in CRICKET_TERMS if t in lowered)
+    score += min(40, terms_found * 5)
+    
+    # Score format (up to 20 pts)
+    if re.search(r"\b\d+\s*/\s*\d+\b|\b\d+\s+for\s+\d+\b", lowered):
+        score += 20
+        
+    # Atmosphere (up to 20 pts)
+    sensory_found = sum(1 for w in SENSORY_WORDS if w in lowered)
+    score += min(20, sensory_found * 10)
+    
+    # Narrative (up to 20 pts)
+    sentences = [s.strip() for s in re.split(r"[.!?]", text) if s.strip()]
+    if len(sentences) >= 3:
+        score += 20
+    elif len(sentences) == 2:
+        score += 10
+        
+    return min(100, score)
+
+
+def calculate_engagement_score(text: str) -> int:
+    """Engagement Score 0-100: exclamations, sensory words, quotes, pacing."""
+    score = 0
+    
+    # Exclamations (up to 25 pts)
+    exclamations = text.count("!")
+    score += min(25, exclamations * 5)
+    
+    # Sensory language (up to 25 pts)
+    lowered = text.lower()
+    sensory = sum(1 for w in SENSORY_WORDS if w in lowered)
+    score += min(25, sensory * 5)
+    
+    # Quotes/dialogue (up to 25 pts)
+    quotes = len(re.findall(r'"([^"]*)"', text)) + len(re.findall(r"'([^']*)'", text))
+    score += min(25, quotes * 10)
+    
+    # Pacing variety (up to 25 pts)
+    sentences = [s.strip() for s in re.split(r"[.!?]", text) if s.strip()]
+    lengths = [len(s.split()) for s in sentences]
+    if len(lengths) > 1:
+        stdev = statistics.stdev(lengths) if len(lengths) > 1 else 0
+        if stdev > 5:
+            score += 25
+        elif stdev > 2:
+            score += 10
+            
+    return min(100, score)
+
+
+def detect_hallucinations(text: str, match_state: str) -> List[str]:
+    """Flag fictional/hallucinated elements (e.g. real players, contradicting score)."""
+    flags = []
+    lowered = text.lower()
+    
+    # Real players
+    for player in REAL_PLAYER_NAMES:
+        if player in lowered:
+            flags.append(f"Real player referenced: {player}")
+            
+    # Naive check for score contradiction (if match_state numbers aren't in text, but other score numbers are)
+    # Just a simple heuristic as requested:
+    state_nums = re.findall(r"\d+", match_state)
+    text_scores = re.findall(r"\b\d+\s*/\s*\d+\b|\b\d+\s+for\s+\d+\b", lowered)
+    if text_scores:
+        text_nums = re.findall(r"\d+", text_scores[0])
+        if any(n not in state_nums for n in text_nums):
+            flags.append(f"Score contradiction: state is {match_state}, text says {text_scores[0]}")
+            
+    return flags
+
+
+def calculate_prediction_stability(predictions: List[PredictionRecord]) -> float:
+    """Return standard deviation of confidence values per match."""
+    if len(predictions) < 2:
+        return 0.0
+    confs = [p.confidence_pct for p in predictions]
+    return statistics.stdev(confs)

@@ -23,7 +23,7 @@ wheels/
 # Logs & Outputs
 *.log
 *.jsonl
-logs/*.jsonl
+!tests/fixtures/*.jsonl
 !logs/.gitkeep
 
 # Environments
@@ -39,7 +39,13 @@ ENV/
 *.swp
 *.swo
 
-# Testing
+# System
+.DS_Store
+Thumbs.db
+
+# Testing & Tools
 .pytest_cache/
 .coverage
 htmlcov/
+.mypy_cache/
+.ruff_cache/

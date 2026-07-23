@@ -2,9 +2,19 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
+import os
+
+__all__ = [
+    "DEFAULT_ENDPOINT", "INFERENCE_SERVER_HW", "CLIENT_DASHBOARD_HW",
+    "PROMPT_VERSION", "FIXED_SAMPLING_BASELINE", "PREFERRED_MODEL_A",
+    "PREFERRED_MODEL_B", "DESK_ORGS", "HERO_TEAM", "OVERS_PER_MATCH",
+    "TOTAL_MATCHES", "TOTAL_TEAM_OVERS", "SCHEDULE", "SECRET_MATCH_WINNERS",
+    "TEAM_CODES", "OPPONENT_VIBES", "SURPRISE_CYCLE", "get_surprise_for_over",
+    "CRICKET_TERMS", "SENSORY_WORDS", "REAL_PLAYER_NAMES"
+]
 
 # Inference Server & Client Specs
-DEFAULT_ENDPOINT = "http://10.55.0.2:1234/v1"
+DEFAULT_ENDPOINT = os.getenv("LA28_ENDPOINT", "http://10.55.0.2:1234/v1")
 INFERENCE_SERVER_HW = "Remote RTX 4060"
 CLIENT_DASHBOARD_HW = "Lenovo RTX 5080"
 
@@ -20,8 +30,8 @@ FIXED_SAMPLING_BASELINE: Dict[str, Any] = {
 }
 
 # Preferred Remote Model IDs
-PREFERRED_MODEL_A = "qwen/qwen2.5-coder-14b"
-PREFERRED_MODEL_B = "qwen/qwen3-coder-30b"
+PREFERRED_MODEL_A = os.getenv("LA28_MODEL_A", "qwen/qwen2.5-coder-14b")
+PREFERRED_MODEL_B = os.getenv("LA28_MODEL_B", "qwen/qwen3-coder-30b")
 
 # Broadcast Desks (Independent Models)
 DESK_ORGS = {
@@ -74,9 +84,25 @@ SURPRISE_CYCLE: List[str] = [
     "an intelligent two-headed spaceship character offers an impossible but thoughtful fielding tip",
 ]
 
+CRICKET_TERMS: List[str] = [
+    "wicket", "boundary", "over", "delivery", "bowler", "batter", "crease",
+    "stumps", "run", "pitch", "six", "four", "umpire", "spin", "pace"
+]
+
+SENSORY_WORDS: List[str] = [
+    "roar", "flash", "crack", "thunderous", "cheer", "chant", "deafening",
+    "vibrant", "echo", "smash", "blaze", "thunder"
+]
+
+REAL_PLAYER_NAMES: List[str] = [
+    "ellyse perry", "harmanpreet kaur", "meg lanning", "smriti mandhana",
+    "alyssa healy", "sophie devine", "suzie bates", "stafanie taylor"
+]
 
 def get_surprise_for_over(match_no: int, over_no: int) -> str:
     """Return the current over surprise element, if triggered; surprises never affect match outcomes."""
+    if match_no < 1 or over_no < 1:
+        raise ValueError(f"match_no and over_no must be >= 1, got {match_no}, {over_no}")
     if over_no in (4, 9, 15, 19):
         return SURPRISE_CYCLE[(match_no + over_no) % len(SURPRISE_CYCLE)]
     return "none; keep the broadcast focused on cricket"

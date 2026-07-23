@@ -18,3 +18,11 @@ dependencies = []
 dev = [
     "pytest>=7.0.0"
 ]
+
+[project.scripts]
+la28-run-benchmark = "scripts.run_benchmark:main"
+la28-verify-endpoint = "scripts.verify_remote_endpoint:main"
+la28-import-scorecard = "scripts.import_official_scorecard:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

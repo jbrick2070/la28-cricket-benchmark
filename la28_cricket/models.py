@@ -1,6 +1,7 @@
 """HTTP Client wrapper for remote RTX 4060 LM Studio inference server with strict baseline sampling and dry-run support."""
 from __future__ import annotations
 
+import hashlib
 import json
 import random
 import time
@@ -12,10 +13,13 @@ from la28_cricket.config import DEFAULT_ENDPOINT, DESK_ORGS, FIXED_SAMPLING_BASE
 from la28_cricket.schema import ModelCallTelemetry
 
 
-def query_remote_models(endpoint: str = DEFAULT_ENDPOINT, timeout: float = 10.0) -> List[str]:
+def query_remote_models(endpoint: str = DEFAULT_ENDPOINT, timeout: float = 10.0, api_key: Optional[str] = None) -> List[str]:
     """Query GET /v1/models on remote endpoint and return list of model IDs."""
     url = endpoint.rstrip("/") + "/models"
-    request = urllib.request.Request(url, headers={"Accept": "application/json"})
+    headers = {"Accept": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             data = json.loads(response.read().decode("utf-8"))
@@ -27,7 +31,9 @@ def query_remote_models(endpoint: str = DEFAULT_ENDPOINT, timeout: float = 10.0)
 
 def generate_synthetic_response(model_id: str, prompt: str) -> Tuple[str, int, int]:
     """Generate deterministic synthetic text and token metrics for dry-run testing."""
-    rand = random.Random(hash(model_id + prompt[:50]))
+    seed_str = model_id + prompt[:50]
+    seed_int = int(hashlib.sha256(seed_str.encode("utf-8")).hexdigest(), 16)
+    rand = random.Random(seed_int)
     desk_name = DESK_ORGS.get(model_id, f"Desk ({model_id})")
     
     if "NEXT_MATCH_PREDICTION:" in prompt or "FINAL_PREDICTION:" in prompt:
@@ -60,6 +66,7 @@ def call_inference_endpoint(
     sampling_params: Optional[Dict[str, Any]] = None,
     dry_run: bool = False,
     timeout: float = 300.0,
+    api_key: Optional[str] = None,
 ) -> ModelCallTelemetry:
     """Call the LLM inference server via SSE streaming with strict fixed sampling baseline."""
     desk_name = DESK_ORGS.get(model, model)
@@ -100,10 +107,14 @@ def call_inference_endpoint(
         "stream_options": {"include_usage": True},
     }
 
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
     request = urllib.request.Request(
         chat_url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
 
@@ -112,41 +123,46 @@ def call_inference_endpoint(
     completion_tokens: Optional[int] = None
     prompt_tokens: Optional[int] = None
 
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            for raw_line in response:
-                line = raw_line.decode("utf-8", errors="replace").strip()
-                if not line.startswith("data:"):
-                    continue
-                data = line[5:].strip()
-                if data == "[DONE]":
-                    break
-                event = json.loads(data)
-                usage = event.get("usage") or {}
-                if usage.get("completion_tokens") is not None:
-                    completion_tokens = int(usage["completion_tokens"])
-                if usage.get("prompt_tokens") is not None:
-                    prompt_tokens = int(usage["prompt_tokens"])
-                for choice in event.get("choices", []):
-                    delta = (choice.get("delta") or {}).get("content") or ""
-                    if delta:
-                        text += delta
+    last_exc = None
+    delay = 1.0
 
-        elapsed = time.perf_counter() - started
-        tok_per_sec = (completion_tokens / elapsed) if (completion_tokens and elapsed > 0) else None
+    for attempt in range(3):
+        text = ""
+        completion_tokens = None
+        prompt_tokens = None
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                for raw_line in response:
+                    line = raw_line.decode("utf-8", errors="replace").strip()
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        break
+                    try:
+                        event = json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+                    usage = event.get("usage") or {}
+                    if usage.get("completion_tokens") is not None:
+                        completion_tokens = int(usage["completion_tokens"])
+                    if usage.get("prompt_tokens") is not None:
+                        prompt_tokens = int(usage["prompt_tokens"])
+                    for choice in event.get("choices", []):
+                        delta = (choice.get("delta") or {}).get("content") or ""
+                        if delta:
+                            text += delta
+            last_exc = None
+            break
+        except Exception as exc:
+            last_exc = exc
+            if attempt < 2:
+                time.sleep(delay)
+                delay *= 2
 
-        return ModelCallTelemetry(
-            model_id=model,
-            desk_name=desk_name,
-            text=text.strip(),
-            elapsed_s=round(elapsed, 3),
-            completion_tokens=completion_tokens,
-            prompt_tokens=prompt_tokens,
-            tok_per_sec=round(tok_per_sec, 2) if tok_per_sec is not None else None,
-            status="ok",
-        )
-    except Exception as exc:
-        elapsed = time.perf_counter() - started
+    elapsed = time.perf_counter() - started
+
+    if last_exc is not None:
         return ModelCallTelemetry(
             model_id=model,
             desk_name=desk_name,
@@ -156,5 +172,18 @@ def call_inference_endpoint(
             prompt_tokens=None,
             tok_per_sec=None,
             status="error",
-            error=str(exc),
+            error=str(last_exc),
         )
+
+    tok_per_sec = (completion_tokens / elapsed) if (completion_tokens and elapsed > 0) else None
+
+    return ModelCallTelemetry(
+        model_id=model,
+        desk_name=desk_name,
+        text=text.strip(),
+        elapsed_s=round(elapsed, 3),
+        completion_tokens=completion_tokens,
+        prompt_tokens=prompt_tokens,
+        tok_per_sec=round(tok_per_sec, 2) if tok_per_sec is not None else None,
+        status="ok",
+    )

@@ -27,6 +27,12 @@ class RunMetadata:
         data["event_type"] = "RUN_START"
         return data
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> RunMetadata:
+        d = dict(data)
+        d.pop("event_type", None)
+        return cls(**d)
+
 
 @dataclass
 class PredictionRecord:
@@ -40,8 +46,17 @@ class PredictionRecord:
     over_index: int
     timestamp: str
 
+    def __post_init__(self):
+        self.confidence_pct = max(0.0, min(100.0, float(self.confidence_pct)))
+        if self.prediction_type not in ("NEXT_MATCH", "FINAL"):
+            raise ValueError(f"Invalid prediction_type: {self.prediction_type}")
+
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> PredictionRecord:
+        return cls(**data)
 
 
 @dataclass
@@ -61,6 +76,14 @@ class ModelCallTelemetry:
 
 
 @dataclass
+class OverQualityMetrics:
+    cqi_score: int
+    engagement_score: int
+    hallucination_flags: List[str]
+    prediction_stability: float
+
+
+@dataclass
 class OverEventRecord:
     timestamp: str
     run_id: str
@@ -77,28 +100,11 @@ class OverEventRecord:
     judge_elapsed_s: float
     winner_model: Optional[str]
     state_after: Dict[str, int]
+    quality_metrics: Dict[str, OverQualityMetrics] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        data = {
-            "event_type": "OVER_EVENT",
-            "timestamp": self.timestamp,
-            "run_id": self.run_id,
-            "match_index": self.match_index,
-            "over_index": self.over_index,
-            "phase": self.phase,
-            "hero_team": self.hero_team,
-            "opponent_team": self.opponent_team,
-            "state_before": self.state_before,
-            "telemetry": [t.to_dict() for t in self.telemetry],
-            "predictions": [p.to_dict() for p in self.predictions],
-            "judge": {
-                "model": self.judge_model,
-                "verdict": self.judge_verdict,
-                "elapsed_s": self.judge_elapsed_s,
-            },
-            "winner_model": self.winner_model,
-            "state_after": self.state_after,
-        }
+        data = asdict(self)
+        data["event_type"] = "OVER_EVENT"
         return data
 
 
