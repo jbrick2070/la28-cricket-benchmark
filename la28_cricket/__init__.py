@@ -1,7 +1,7 @@
 """LA28 Women's Cricket LLM Benchmark Package."""
 from __future__ import annotations
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 from la28_cricket.benchmark import LA28CricketBenchmark
 from la28_cricket.config import (

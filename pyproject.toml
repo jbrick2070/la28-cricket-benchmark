@@ -1,16 +1,17 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "la28-cricket-benchmark"
-version = "1.0.0"
-description = "Universal Fictional LA28 Women's Cricket LLM Benchmark for OpenAI-Compatible Inference Endpoints"
+version = "1.1.0"
+description = "Unofficial universal LA 2028 women's cricket benchmark for OpenAI-compatible inference endpoints"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    {name = "LA28 Cricket Benchmark Team"}
+    {name = "LA 2028 Cricket Benchmark contributors"}
 ]
 dependencies = []
 
@@ -26,3 +27,6 @@ la28-import-scorecard = "scripts.import_official_scorecard:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["la28_cricket*", "scripts*"]

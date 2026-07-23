@@ -5,7 +5,14 @@
  */
 export class DataManager {
   constructor() {
-    this.apiEndpoints = ['http://localhost:8080/api/data', 'http://localhost:8000/api/data'];
+    const sameOriginEndpoint = window.location.protocol.startsWith('http')
+      ? `${window.location.origin}/api/data`
+      : null;
+    this.apiEndpoints = [
+      sameOriginEndpoint,
+      'http://localhost:8080/api/data',
+      'http://localhost:8000/api/data',
+    ].filter((endpoint, index, all) => endpoint && all.indexOf(endpoint) === index);
     this.activeEndpoint = null;
     this.isLiveBackend = false;
     this.onDataUpdateCallbacks = [];

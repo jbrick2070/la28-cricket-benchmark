@@ -1,54 +1,86 @@
-# LA28 Women's Cricket LLM Benchmark
+# LA 2028 Women's Cricket LLM Benchmark
 
-[![Benchmark Status](https://img.shields.io/badge/LA28--Cricket--Benchmark-Standalone-brightgreen)](#)
-[![Compatibility](https://img.shields.io/badge/API-OpenAI--Compatible-blue)](#)
-[![LLMs Supported](https://img.shields.io/badge/Models-Any--LLM-purple)](#)
+![An original concept panorama of a packed cricket stadium in Pomona with the San Gabriel Mountains behind it](frontend/public/pomona-stadium-panorama.png)
 
-## 📌 Crucial Disclaimers & Fair Usage
+[![Status](https://img.shields.io/badge/status-open_benchmark-91f2a5)](#project-status)
+[![API](https://img.shields.io/badge/API-OpenAI_compatible-64e6eb)](#run-with-real-models)
+[![Hardware](https://img.shields.io/badge/hardware-any_CPU_or_GPU-ffb25f)](#run-with-real-models)
+[![Tests](https://img.shields.io/badge/tests-30_passing-bc7cff)](#verification)
+[![License](https://img.shields.io/badge/license-MIT-f6f4ec)](#license)
 
-1. **Fictional Benchmark Only**: This repository hosts a **fictional LA28 women’s cricket LLM benchmark**. The tournament arc and match narrative are synthetic benchmark fixtures designed for evaluating language model performance.
-2. **Simulated Ground Truth**: Current tournament results are **simulated ground truth only**.
-3. **No Official LA28 Winner**: There is **no official LA28 cricket winner** until the real 2028 Olympic matches occur in Los Angeles.
-4. **Future Scorecard Importable**: Future official 2028 scorecards can be imported into this repository (`la28-import-scorecard`) and evaluated against locked, immutable model predictions.
-5. **Universal LLM & Hardware Compatibility**: This benchmark connects to **ANY OpenAI-compatible API endpoint** (`http://localhost:1234/v1`, Ollama, LM Studio, vLLM, LocalAI, Aphrodite, OpenAI API, etc.) running on **ANY hardware** (Mac, Windows, Linux, local GPUs, cloud instances, or CPUs).
-6. **Independent Broadcast Desks**: Two independent broadcast desks/models are evaluated fairly:
-   - **Desk A**: Configurable LLM (Default: `qwen/qwen2.5-coder-14b`) — *Southern Hemisphere Sports Network*
-   - **Desk B**: Configurable LLM (Default: `qwen/qwen3-coder-30b`) — *Olympic Cricket Analysis Desk*
-7. **Zero Model Leakage**: Desk A and Desk B predictions and commentary are generated in strict isolation. Neither desk can see or influence the other desk's prompt, outputs, or predictions.
-8. **OBS is Optional**: OBS is an optional visual streaming adapter and is **not a core dependency**.
-9. **Fictional Elements**: The fictional broadcast story arc may feature recurring surprises (e.g. a boundary couch, two ordinary men in sleepwear, a passing spaceship, or an intelligent two-headed spaceship character giving fielding advice). These creative narrative elements **never affect match scoring or outcome determination**.
+An open, hardware-agnostic benchmark for comparing how two language models predict and broadcast a fictional women's T20 campaign on the road to Los Angeles in 2028.
 
----
+It is part cricket knowledge test, part calibration study, part live broadcast laboratory. Every desk sees the same match state under the same sampling baseline. Neither sees the other desk, the judge, or the hidden fictional result. The real winner of the benchmark cannot be known until official 2028 scorecards exist.
 
-## 🎯 Tournament Format & Bracket
+> **Unofficial research project.** This repository is not affiliated with the IOC, LA28, national teams, or venue operators. The seven-match route, commentary, score states, crowds, weather, traffic, and current outcomes are simulated.
 
-The benchmark evaluates models across a **seven-match fictional tournament campaign** totaling **140 team overs** (20 overs per T20 match):
+## Project status
 
-1. **Group Match 1**: South Africa `[ZA]` vs Australia `[AUS]`
-2. **Group Match 2**: South Africa `[ZA]` vs Great Britain (via England) `[GB]`
-3. **Group Match 3**: South Africa `[ZA]` vs India `[IND]`
-4. **Group Match 4**: South Africa `[ZA]` vs Qualifier 5 `[Q5]`
-5. **Group Match 5**: South Africa `[ZA]` vs Qualifier 6 `[Q6]`
-6. **Semifinal**: South Africa `[ZA]` vs India `[IND]`
-7. **Gold-Medal Final**: South Africa `[ZA]` vs Australia `[AUS]`
+| Layer | Status |
+| --- | --- |
+| Two-desk 140-over benchmark | Ready |
+| OpenAI-compatible endpoints | Ready |
+| Heterogeneous endpoint support | Ready |
+| Per-call latency and token telemetry | Ready |
+| Prediction and scorecard audit | Ready |
+| Pomona broadcast studio | Ready |
+| Official 2028 result | **Pending the real tournament** |
 
----
+The repository deliberately has no official benchmark champion yet. Models make honest predictions now; the official scorecard importer evaluates those locked calls after the real matches.
 
-## 📐 Benchmark Dimensions
+## The experiment
 
-This framework evaluates models across multiple dimensions beyond standard log-likelihood:
+Two independent model desks cover the same fictional tournament:
 
-- **Cricket Quality Index (CQI)**: Measures domain-specific fluency, accurate terminology usage, and logical adherence to T20 cricket mechanics.
-- **Engagement Score**: A composite metric scoring the vividness of radio broadcast descriptions, crowd atmosphere synthesis, and pacing.
-- **Prediction Stability**: Evaluates how consistently a model's live predictions align with its early-stage predictions, punishing erratic swings.
-- **Hallucination Detection**: Penalizes non-existent rule inventions (e.g., a "12-run super ball") or hallucinated match actions outside the prompt's bounded constraints.
-- **Head-to-Head Judgement**: An independent judge model (typically Model B or a separate robust model) evaluates A vs B on narrative and atmospheric delivery.
+- **Desk A** defaults to `qwen/qwen2.5-coder-14b`.
+- **Desk B** defaults to `qwen/qwen3-coder-30b`.
+- Either desk may be replaced with any model exposed by an OpenAI-compatible API.
+- Desk A and Desk B may run on the same endpoint or entirely different providers and machines.
+- A configured judge chooses the stronger over-by-over broadcast presentation.
+- Prediction accuracy is evaluated separately from presentation quality.
 
----
+The benchmark records:
 
-## ⚙️ Fixed Baseline & Sampling Parameters
+- next-match and gold-medal predictions;
+- confidence calibration using Brier score;
+- Commentary Quality Index (CQI);
+- engagement score;
+- prediction stability;
+- hallucination flags;
+- judge head-to-head wins;
+- latency, retries, prompt tokens, completion tokens, and tokens per second;
+- endpoint role and exact requested sampling parameters.
 
-To ensure strict fairness, repeatability, and non-misleading comparison, all model calls execute with a locked baseline prompt template (`v1.0`) and fixed sampling parameters:
+## Fairness contract
+
+```mermaid
+flowchart LR
+    S["Shared match state"] --> A["Desk A<br/>isolated prompt"]
+    S --> B["Desk B<br/>isolated prompt"]
+    A --> L["Append-safe JSONL ledger"]
+    B --> L
+    A --> J["Presentation judge"]
+    B --> J
+    J --> L
+    L --> D["Live studio + telemetry"]
+    L --> I["2028 official scorecard importer"]
+    I --> R["Final accuracy + calibration result"]
+```
+
+The implementation enforces several anti-bias rules:
+
+1. Both contestant desks use the same fixed sampling baseline.
+2. Candidate call order alternates every over, counterbalancing warm-cache, thermal, and first-provider-slot effects.
+3. Logs preserve a canonical A/B order even when execution order alternates.
+4. A failed contestant call fails the run visibly; it cannot silently disappear.
+5. A failed or malformed judge cannot silently favor Desk B. A deterministic local CQI-plus-engagement rubric is used as the fallback.
+6. Every run gets a unique JSONL file. The runner refuses to append to a non-empty explicit log path.
+7. The model list on every configured endpoint is preflighted before a live run unless the operator deliberately skips that check.
+8. Scorecard audits hash both the benchmark log and imported scorecard.
+
+## Fixed sampling baseline
+
+Contestant calls use:
 
 ```json
 {
@@ -61,168 +93,239 @@ To ensure strict fairness, repeatability, and non-misleading comparison, all mod
 }
 ```
 
-Prior to running live benchmark calls, check your endpoint using `la28-verify-endpoint` to confirm exact active model IDs returned by your inference server.
+The judge has its own fixed low-variance baseline (`temperature=0.1`, `max_tokens=120`). All requested parameters are written into call telemetry.
 
----
+## Fictional campaign fixture
 
-## 🌍 Environment Variables
+The included South Africa road-to-gold fixture contains seven fictional matches and 140 team overs:
 
-You can configure any endpoint, model ID, or hardware description via environment variables:
+| Match | Phase | Fixture |
+| ---: | --- | --- |
+| 1 | Group | South Africa vs Australia |
+| 2 | Group | South Africa vs Great Britain (via England) |
+| 3 | Group | South Africa vs India |
+| 4 | Group | South Africa vs Qualifier 5 |
+| 5 | Group | South Africa vs Qualifier 6 |
+| 6 | Semifinal | South Africa vs India |
+| 7 | Gold-medal final | South Africa vs Australia |
 
-- `LA28_ENDPOINT`: Override the inference endpoint URL (default: `http://localhost:1234/v1`).
-- `LA28_MODEL_A`: Set model ID for Desk A (default: `qwen/qwen2.5-coder-14b` or any active model ID).
-- `LA28_MODEL_B`: Set model ID for Desk B (default: `qwen/qwen3-coder-30b` or any active model ID).
-- `LA28_SERVER_HW`: Set custom inference server label (default: `OpenAI-Compatible Inference Server`).
-- `LA28_CLIENT_HW`: Set custom client/dashboard label (default: `Benchmark Client Machine`).
+This bracket is a benchmark narrative, **not an official LA28 draw**.
 
----
+Recurring surreal broadcast moments -- the boundary couch, two ordinary people in sleepwear, a silent spacecraft, and a friendly two-headed visitor -- may appear in commentary. They never alter scores, match outcomes, judging rules, or prediction evaluation.
 
-## 📊 Recorded Benchmark Metrics
+## Official Los Angeles context
 
-Every benchmark run emits structured JSONL audit logs (`logs/la28_cricket_benchmark.jsonl`) recording:
+The presentation is grounded in public venue facts while keeping all benchmark data clearly separate:
 
-- **Prediction Accuracy (%)**: Next-match winner accuracy & campaign gold-medal winner accuracy.
-- **Confidence Calibration (Brier Score)**: Mean Brier Score $BS = \frac{1}{N} \sum (c_i - y_i)^2$ evaluating model confidence vs actual outcomes.
-- **Wall-Clock Latency (s)**: Individual call latency, total run latency, mean, and p95 latency.
-- **Token Telemetry**: Total completion tokens, prompt tokens, and generation throughput (**tok/s**).
-- **Error Tracking**: API connection errors, timeouts, or parse failures.
+- LA28 lists cricket as a T20 competition with six-team women's and men's tournaments at **Fairgrounds Cricket Stadium in Pomona**.
+- The official venue page describes the **San Gabriel Mountains** as the stadium backdrop and cricket's return to the Games after 128 years.
+- LA28 lists **Santa Anita Park in Arcadia** for equestrian competition.
+- The Olympic Games are scheduled for **July 14-30, 2028**.
 
----
+Sources: [LA28 cricket](https://la28.org/en/games-plan/olympics/cricket.html), [Fairgrounds Cricket Stadium](https://la28.org/en/games-plan/venues/fairgrounds-cricket-stadium.html), [updated venue plan](https://la28.org/en/newsroom/la28-celebrates-updated-olympic-venue-plan.html), and [Games dates](https://la28.org/en.html).
 
-## 📁 Repository Structure
+## Quick start
 
-```
-la28-cricket-benchmark/
-├── README.md                          # Project documentation and disclaimers
-├── pyproject.toml                     # Python package metadata (entry points)
-├── requirements.txt                   # Dependency specifications
-├── .gitignore                         # Ignore logs, caches, and build artifacts
-├── la28_cricket/                      # Core python benchmark package
-│   ├── __init__.py
-│   ├── config.py                      # Baseline config, schedule, ground truth, constants
-│   ├── models.py                      # HTTP client for remote endpoint & dry-run
-│   ├── schema.py                      # Structured JSONL schema definitions & data models
-│   ├── metrics.py                     # Accuracy, Brier score calibration, telemetry
-│   ├── benchmark.py                   # 140-over campaign benchmark orchestrator
-│   ├── dashboard.py                   # Standalone local web dashboard server
-│   └── obs_overlays.py                # Broadcast overlay web server for OBS integration
-├── scripts/                           # CLI tools (exposed via pyproject.toml)
-│   ├── run_benchmark.py               # Main launcher (--dry-run, --overs, --endpoint)
-│   ├── verify_remote_endpoint.py      # Health-check target inference endpoint
-│   └── import_official_scorecard.py   # Evaluate predictions against official scorecards
-├── tests/                             # Automated test suite
-│   ├── test_config.py                 # Schedule, surprises, environment variables
-│   ├── test_isolation.py              # Zero-leakage desk prompt isolation
-│   ├── test_schema_and_metrics.py     # Metrics & JSONL schema unit tests
-│   ├── test_benchmark_dryrun.py       # Full dry-run campaign integration test
-│   ├── test_cli_scripts.py            # CLI argument parsing and execution
-│   └── test_obs_overlays.py           # OBS overlay route testing
-│   └── fixtures/                      # Test assets (e.g. sample_scorecard.json)
-└── logs/                              # Directory for output JSONL audit logs
-```
-
----
-
-## 💻 🖥️ Live Studio Broadcast & Stadium Visualizer App (`frontend/`)
-
-A standalone Vite web application providing a **broadcast-grade visual experience** compatible with Mac, Windows, and Linux.
-
-### Features
-- **🏟️ 2D Stadium Canvas Engine**: Animated stadium under floodlights, shot trajectory arcs (sixes, fours, wickets), Hawk-Eye tracking mode, and fireworks display.
-- **🔊 Web Audio Ambiance & SFX**: Synthesized bat-on-ball crack sound, crowd cheering roars, and stadium background ambiance (zero audio asset dependencies).
-- **🎙️ Web Speech AI Voiceover**: Live commentary text-to-speech engine with distinct pitch/voice profiles for Desk A vs Desk B.
-- **📺 OBS Producer Suite**: Quick access and one-click URL copying for all 7 broadcast overlays.
-- **⚡ Dual Data Mode**: Automatically syncs with Python backend (`http://localhost:8080/api/data`) or falls back to an offline browser simulation.
-
-### Running the Studio App
+Python 3.9+ is required.
 
 ```bash
-# 1. Navigate to frontend
+git clone https://github.com/jbrick2070/la28-cricket-benchmark.git
+cd la28-cricket-benchmark
+python -m pip install -e ".[dev]"
+```
+
+Run a deterministic five-over rehearsal without any network model calls:
+
+```bash
+la28-run-benchmark --dry-run --overs 5 --delay 0
+```
+
+Run the complete synthetic 140-over rehearsal:
+
+```bash
+la28-run-benchmark --dry-run --overs 140 --delay 0
+```
+
+Each run writes a new file such as:
+
+```text
+logs/run_20280714_160000_a1b2c3.jsonl
+```
+
+## Run with real models
+
+Verify the configured models first:
+
+```bash
+la28-run-benchmark \
+  --check-models \
+  --endpoint http://localhost:1234/v1 \
+  --model-a qwen/qwen2.5-coder-14b \
+  --model-b qwen/qwen3-coder-30b
+```
+
+Then run:
+
+```bash
+la28-run-benchmark \
+  --endpoint http://localhost:1234/v1 \
+  --model-a qwen/qwen2.5-coder-14b \
+  --model-b qwen/qwen3-coder-30b \
+  --overs 140
+```
+
+The runner performs the model preflight automatically for live campaigns. Use `--skip-model-check` only when the endpoint cannot expose `/v1/models`.
+
+### Different endpoint per desk
+
+```bash
+la28-run-benchmark \
+  --endpoint-a http://host-a:1234/v1 \
+  --endpoint-b http://host-b:8000/v1 \
+  --model-a organization/model-a \
+  --model-b organization/model-b \
+  --judge-model organization/judge \
+  --judge-endpoint https://provider.example/v1
+```
+
+API keys may be passed with `--api-key-a`, `--api-key-b`, and `--judge-api-key`.
+
+Equivalent environment variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `LA28_ENDPOINT` | Shared default endpoint |
+| `LA28_ENDPOINT_A` | Desk A endpoint |
+| `LA28_ENDPOINT_B` | Desk B endpoint |
+| `LA28_API_KEY_A` | Desk A API key |
+| `LA28_API_KEY_B` | Desk B API key |
+| `LA28_MODEL_A` | Desk A model ID |
+| `LA28_MODEL_B` | Desk B model ID |
+| `LA28_SERVER_HW` | Optional inference hardware label |
+| `LA28_CLIENT_HW` | Optional benchmark client label |
+
+## Pomona broadcast studio
+
+The Vite frontend is a first-class visual surface, not a requirement for running the benchmark.
+
+It includes:
+
+- an original cinematic Pomona stadium panorama;
+- a live animated trajectory and Hawk-Eye layer;
+- a responsive world-feed score ribbon;
+- dynamic model names and per-model throughput;
+- winning commentary and head-to-head judging;
+- seven-match journey visualization;
+- clearly labeled simulated weather, attendance, and traffic;
+- official venue context for Pomona cricket and Santa Anita equestrian;
+- optional synthesized stadium audio and browser voiceover;
+- optional OBS-compatible production routes.
+
+Run it in standalone demo mode:
+
+```bash
 cd frontend
-
-# 2. Run local development server
+npm install
 npm run dev
-# Open http://localhost:5173 in any browser (Mac / Windows / Linux)
-
-# Or serve the production build directly via Python server at http://localhost:8080/studio
-python la28_cricket/dashboard.py --port 8080
 ```
 
----
+Open `http://localhost:5173`.
 
-## 🛠️ Development Setup
-
-To install the benchmark tools in editable mode with development dependencies:
+Or build it and serve it alongside the live Python ledger:
 
 ```bash
-pip install -e .[dev]
+cd frontend
+npm run build
+cd ..
+python -m la28_cricket.dashboard --port 8080
 ```
 
-Run the complete automated test suite locally:
-```bash
-pytest tests/
-```
+Open:
 
----
+- `http://localhost:8080/studio` for the Pomona broadcast studio;
+- `http://localhost:8080` for the compact control dashboard;
+- `http://localhost:8080/api/data` for the current normalized ledger view.
 
-## 📺 OBS Integration for Streamers
+If no Python dashboard is reachable, the studio switches to a deterministic browser demonstration and labels itself **Browser demo - simulated**.
 
-The benchmark includes a dedicated lightweight web server (`obs_overlays.py`) that serves transparent HTML pages designed to be captured by OBS Studio as **Browser Sources**. 
+## Audit official 2028 scorecards
 
-### Available Overlay URLs:
-When running on port `8081` (default):
-- **Scorebug**: `http://localhost:8081/scoreboard` — Live score, current over, and team graphics.
-- **Predictions**: `http://localhost:8081/predictions` — Real-time model prediction confidences and Brier scores.
-- **Commentary**: `http://localhost:8081/` — Live scrolling text from the winning broadcast desk.
-
-### Setup Instructions in OBS:
-1. Under "Sources", click the **+** button and select **Browser**.
-2. Name it (e.g., "LA28 Scorebug").
-3. Uncheck "Local file".
-4. Enter the URL (e.g., `http://localhost:8081/scoreboard`).
-5. **Recommended Dimensions**: 
-   - Width: `1920`, Height: `1080` (The overlays are designed for 1080p canvases with transparent backgrounds).
-6. Click **OK**.
-
----
-
-## 🚀 Quick Start & Verification
-
-### 1. Verify Endpoint Health
-Before starting a live run on an inference server (e.g., `http://localhost:1234/v1`):
+When an official scorecard exists:
 
 ```bash
-la28-verify-endpoint --endpoint http://localhost:1234/v1
+la28-import-scorecard \
+  --log-path logs/run_20280714_160000_a1b2c3.jsonl \
+  --scorecard path/to/official_scorecard.json \
+  --output audits/run_20280714_audit.json
 ```
 
-### 2. Run a Benchmark Campaign (with OBS Overlays)
-Execute a live benchmark campaign, enabling rich verbose output and auto-launching the OBS overlay server on port 8081:
+If a historical file contains more than one `run_id`, selection is mandatory:
 
 ```bash
-la28-run-benchmark --verbose --obs-port 8081
+la28-import-scorecard \
+  --log-path logs/historical.jsonl \
+  --run-id run_20280714_160000_a1b2c3 \
+  --scorecard path/to/official_scorecard.json
 ```
 
-To run a simulated 140-over dry-run campaign without calling remote network APIs:
+The audit output includes:
+
+- selected run ID;
+- SHA-256 of the benchmark log;
+- SHA-256 of the scorecard;
+- official match winners and gold medalist;
+- per-model accuracy totals;
+- per-model Brier calibration.
+
+## JSONL event model
+
+| Event | Purpose |
+| --- | --- |
+| `RUN_START` | Run ID, models, endpoints, fixed sampling, prompt version, log path |
+| `OVER_EVENT` | Shared state, both calls, call order, predictions, quality, judge, winner, surprise |
+| `MATCH_RESOLVED` | Fictional benchmark result and match-level prediction evaluation |
+| `CAMPAIGN_SUMMARY` | Completion status, totals, aggregate quality and telemetry |
+
+`completion_status` is `completed`, `interrupted`, or `failed`. A partial or failed campaign never reports itself as successfully complete.
+
+## Repository map
+
+```text
+la28_cricket/
+  benchmark.py          campaign orchestration and fairness controls
+  config.py             schedule, models, endpoints, fixed baselines
+  dashboard.py          JSONL adapter and studio/dashboard server
+  metrics.py            prediction, calibration, quality, telemetry
+  models.py             OpenAI-compatible streaming client
+  obs_overlays.py       optional transparent production surfaces
+  schema.py             versioned JSONL records
+frontend/
+  public/               original venue artwork and favicon
+  src/                  broadcast UI, canvas animation, demo engine
+scripts/
+  run_benchmark.py
+  verify_remote_endpoint.py
+  import_official_scorecard.py
+tests/
+  fixtures/
+  test_*.py
+```
+
+## Verification
+
 ```bash
-la28-run-benchmark --dry-run --overs 140
+python -m compileall -q la28_cricket scripts tests
+python -m unittest discover -s tests -p "test_*.py"
+cd frontend
+npm run build
 ```
 
-### 3. Launch Live Web Dashboard
-Launch the standalone local web monitoring interface:
+Current baseline: **30 Python tests passing**, including the complete 140-over dry-run, desk isolation, CLI behavior, call-order counterbalancing, failure propagation, match-two scoring, multi-run scorecard selection, and dashboard normalization.
 
-```bash
-python la28_cricket/dashboard.py --port 8080
-```
-Open `http://localhost:8080` in your web browser.
+## Design asset
 
----
+`frontend/public/pomona-stadium-panorama.png` is original AI-generated concept artwork created for this repository. It contains no official Games logo or venue branding and must not be presented as a photograph of a completed venue.
 
-## 🔒 Auditability & Replayability
+## License
 
-Each campaign run generates an immutable `run_id` with full provenance details embedded in the JSONL header (`RUN_START`). All prediction outputs (`NEXT_MATCH_PREDICTION` and `FINAL_PREDICTION`) recorded in over 1 are permanently locked and cannot be mutated or overwritten by subsequent overs.
-
-When official 2028 Olympic cricket scorecards become available, evaluate locked predictions using:
-
-```bash
-la28-import-scorecard --log-path logs/la28_cricket_benchmark.jsonl --scorecard path/to/official_2028_scorecard.json
-```
+MIT. See [LICENSE](LICENSE).

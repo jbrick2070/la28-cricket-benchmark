@@ -1,7 +1,9 @@
 """Unit tests verifying prompt isolation between broadcast desks."""
 from __future__ import annotations
 
+import io
 import unittest
+from contextlib import redirect_stdout
 from unittest.mock import patch
 import tempfile
 from pathlib import Path
@@ -39,7 +41,8 @@ class TestDeskIsolation(unittest.TestCase):
                 dry_run=True,
                 delay_seconds=0.0
             )
-            benchmark.run_campaign(max_overs_override=1)
+            with redirect_stdout(io.StringIO()):
+                benchmark.run_campaign(max_overs_override=1)
             
             # Extract prompts passed to call_inference_endpoint
             prompts_a = []

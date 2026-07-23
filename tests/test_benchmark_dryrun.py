@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import json
+import io
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 from la28_cricket.benchmark import LA28CricketBenchmark
@@ -22,7 +24,8 @@ class TestBenchmarkDryRun(unittest.TestCase):
                 delay_seconds=0.0,
             )
             # Run all 140 overs in dry-run mode
-            summary = benchmark.run_campaign(max_overs_override=140)
+            with redirect_stdout(io.StringIO()):
+                summary = benchmark.run_campaign(max_overs_override=140)
 
             self.assertEqual(summary["total_overs"], 140)
             
@@ -85,7 +88,8 @@ class TestBenchmarkDryRun(unittest.TestCase):
                 dry_run=True,
                 delay_seconds=0.0,
             )
-            summary = benchmark.run_campaign(max_overs_override=5)
+            with redirect_stdout(io.StringIO()):
+                summary = benchmark.run_campaign(max_overs_override=5)
 
             self.assertEqual(summary["total_overs"], 5)
 
