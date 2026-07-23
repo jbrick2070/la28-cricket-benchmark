@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import http.server
+import mimetypes
 import socketserver
 import sys
 import time
@@ -514,7 +515,11 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         elif self.path in OVERLAYS:
             self._set_headers("text/html")
             self.wfile.write(OVERLAYS[self.path].encode("utf-8"))
-        elif self.path.startswith("/studio") or self.path.startswith("/assets/"):
+        elif (
+            self.path.startswith("/studio")
+            or self.path.startswith("/assets/")
+            or self.path == "/pomona-stadium-panorama.png"
+        ):
             dist_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
             rel_path = self.path.lstrip("/")
             if rel_path.startswith("studio"):
@@ -523,13 +528,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 target = dist_dir / rel_path
 
             if target.exists() and target.is_file():
-                content_type = "text/html"
-                if target.suffix == ".js":
-                    content_type = "application/javascript"
-                elif target.suffix == ".css":
-                    content_type = "text/css"
-                elif target.suffix == ".json":
-                    content_type = "application/json"
+                content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
 
                 self._set_headers(content_type)
                 self.wfile.write(target.read_bytes())

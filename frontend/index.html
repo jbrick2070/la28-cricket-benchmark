@@ -1,356 +1,443 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LA28 Women's Cricket LLM Benchmark — Live Broadcast Studio</title>
-  
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="/src/style.css" />
-</head>
-<body>
-  <div id="app">
-    <!-- Top Navigation & Studio Header -->
-    <header class="studio-header">
-      <div class="brand-title">
-        <div class="la28-emblem">
-          <span class="gold-ring"></span>
-          <span class="emblem-text">LA28</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An unofficial, fictional LA 2028 women's cricket benchmark for comparing LLM predictions, commentary quality, and inference performance."
+    />
+    <title>LA 2028 Cricket Model Lab — Unofficial Benchmark</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div id="app">
+      <div class="legal-ribbon">
+        <span>UNOFFICIAL · FICTIONAL BENCHMARK</span>
+        <span>NO OFFICIAL RESULTS EXIST UNTIL THE 2028 GAMES</span>
+      </div>
+
+      <header class="studio-header">
+        <a class="brand-lockup" href="#tab-stadium" aria-label="LA 2028 Cricket Model Lab home">
+          <div class="lab-mark" aria-hidden="true">
+            <span class="mark-la">LA</span>
+            <span class="mark-rule"></span>
+            <span class="mark-28">28</span>
+          </div>
+          <div>
+            <p class="eyebrow">WOMEN'S CRICKET · MODEL LAB</p>
+            <h1>Road to Gold</h1>
+            <p class="brand-subtitle">Fairgrounds Cricket Stadium · Pomona, California</p>
+          </div>
+        </a>
+
+        <div class="header-actions">
+          <div class="mode-badge" id="data-mode-badge">
+            <span class="pulse-dot"></span>
+            <span id="mode-text">Connecting benchmark…</span>
+          </div>
+          <button id="toggle-audio-btn" class="icon-btn" type="button" title="Toggle stadium ambience">
+            <span class="icon" aria-hidden="true">◖))</span>
+            <span class="btn-label">Audio on</span>
+          </button>
+          <button id="toggle-tts-btn" class="icon-btn" type="button" title="Toggle commentary voice">
+            <span class="icon" aria-hidden="true">◉</span>
+            <span class="btn-label">Voice off</span>
+          </button>
         </div>
-        <div class="title-group">
-          <h1>Women's Cricket LLM Benchmark</h1>
-          <p class="subtitle">Live Olympic Studio & AI Model Evaluation Desk</p>
+      </header>
+
+      <section class="venue-pulse" aria-label="Pomona venue simulation">
+        <div class="pulse-intro">
+          <span class="live-signal"><i></i> POMONA SIGNAL</span>
+          <strong>Morning session</strong>
+        </div>
+        <div class="pulse-item">
+          <span>Listed start</span>
+          <strong>09:00 PT</strong>
+          <small>Schedule v2.1 · subject to change</small>
+        </div>
+        <div class="pulse-item">
+          <span>Weather scenario</span>
+          <strong id="venue-weather">82°F · Dry</strong>
+          <small class="sim-label">SIMULATED</small>
+        </div>
+        <div class="pulse-item">
+          <span>Turnstile estimate</span>
+          <strong id="venue-crowd">16,840</strong>
+          <small class="sim-label">SIMULATED</small>
+        </div>
+        <div class="pulse-item">
+          <span>Arrival pulse</span>
+          <strong id="venue-traffic">74 / 100</strong>
+          <small class="sim-label">SIMULATED</small>
+        </div>
+        <div class="pulse-item mountain-item">
+          <span>Horizon</span>
+          <strong>San Gabriel Mountains</strong>
+          <small>Official venue backdrop</small>
+        </div>
+      </section>
+
+      <div class="venue-network" aria-label="Los Angeles venue network">
+        <span class="network-label">ACROSS THE GAMES</span>
+        <div class="ticker-window">
+          <div class="ticker-track">
+            <span><b>CRICKET</b> · Fairgrounds Cricket Stadium · Pomona</span>
+            <span><b>EQUESTRIAN</b> · Santa Anita Park · Arcadia</span>
+            <span><b>HISTORY</b> · Cricket returns to the Games after 128 years</span>
+            <span><b>DATES</b> · July 14–30, 2028</span>
+            <span><b>CRICKET</b> · Fairgrounds Cricket Stadium · Pomona</span>
+            <span><b>EQUESTRIAN</b> · Santa Anita Park · Arcadia</span>
+          </div>
         </div>
       </div>
 
-      <div class="header-status">
-        <div class="mode-badge" id="data-mode-badge">
-          <span class="pulse-dot"></span>
-          <span id="mode-text">Connecting Backend...</span>
-        </div>
-        <button id="toggle-audio-btn" class="icon-btn" title="Toggle Stadium Ambiance & SFX">
-          <span class="icon">🔊</span> <span class="btn-label">Audio ON</span>
+      <nav class="studio-nav" aria-label="Benchmark views">
+        <button class="nav-tab active" data-tab="stadium" type="button">
+          <span class="nav-index">01</span> Match world
         </button>
-        <button id="toggle-tts-btn" class="icon-btn" title="Toggle AI Voiceover Commentary">
-          <span class="icon">🎙️</span> <span class="btn-label">Voice OFF</span>
+        <button class="nav-tab" data-tab="desks" type="button">
+          <span class="nav-index">02</span> Broadcast desks
         </button>
-      </div>
-    </header>
+        <button class="nav-tab" data-tab="telemetry" type="button">
+          <span class="nav-index">03</span> Model telemetry
+        </button>
+        <button class="nav-tab" data-tab="production" type="button">
+          <span class="nav-index">04</span> Production
+        </button>
+      </nav>
 
-    <!-- Main Navigation Bar -->
-    <nav class="studio-nav">
-      <button class="nav-tab active" data-tab="stadium">
-        <span>🏟️</span> Stadium Cam & Hawk-Eye
-      </button>
-      <button class="nav-tab" data-tab="desks">
-        <span>🎙️</span> Broadcast Desks A/B
-      </button>
-      <button class="nav-tab" data-tab="telemetry">
-        <span>📊</span> Model Benchmark Radar
-      </button>
-      <button class="nav-tab" data-tab="obs-producer">
-        <span>📺</span> OBS Overlay Producer
-      </button>
-    </nav>
-
-    <!-- App Content Panels -->
-    <main class="studio-content">
-      
-      <!-- TAB 1: STADIUM VISUALIZER & LIVE MATCH ACTION -->
-      <section id="tab-stadium" class="tab-panel active">
-        <div class="stadium-grid">
-          <!-- Left Column: Canvas Field & Controls -->
-          <div class="canvas-container-card">
-            <div class="card-header-bar">
-              <div class="header-left">
-                <span class="live-tag">LIVE STADIUM FEED</span>
-                <span id="stadium-match-title" class="match-name">South Africa vs Australia</span>
-              </div>
-              <div class="camera-controls">
-                <button class="cam-btn active" data-cam="full">Full Oval</button>
-                <button class="cam-btn" data-cam="pitch">Pitch Zoom</button>
-                <button class="cam-btn" data-cam="hawkeye">Hawk-Eye</button>
-                <button id="simulate-shot-btn" class="btn-primary-sm">⚡ Trigger Delivery</button>
-              </div>
+      <main class="studio-content">
+        <section id="tab-stadium" class="tab-panel active">
+          <div class="section-kicker">
+            <div>
+              <p class="eyebrow coral">LIVE FICTIONAL MATCH WORLD</p>
+              <h2>Pomona wakes up to cricket.</h2>
             </div>
-            
-            <div class="canvas-wrapper">
-              <canvas id="stadium-canvas" width="900" height="520"></canvas>
-              
-              <!-- Floating HUD Overlay over Canvas -->
-              <div class="canvas-hud-overlay">
-                <div class="hud-score-card">
-                  <div class="hud-team hero">
-                    <span class="flag-icon" id="hero-flag">🇿🇦</span>
-                    <span class="team-name" id="hero-name">South Africa</span>
-                    <span class="team-score" id="match-score-runs">45/2</span>
+            <p>
+              Two independent model desks call every over. A separate judge chooses the stronger
+              broadcast while the predictions stay locked for the real 2028 audit.
+            </p>
+          </div>
+
+          <div class="stadium-grid">
+            <article class="stadium-card">
+              <div class="card-topline">
+                <div class="match-identity">
+                  <span class="live-tag">LIVE SIM</span>
+                  <span id="stadium-match-title">South Africa vs Australia</span>
+                </div>
+                <div class="camera-controls" aria-label="Camera view">
+                  <button class="cam-btn active" data-cam="full" type="button">Grandstand</button>
+                  <button class="cam-btn" data-cam="pitch" type="button">Pitch</button>
+                  <button class="cam-btn" data-cam="hawkeye" type="button">Trajectory</button>
+                  <button id="simulate-shot-btn" class="delivery-btn" type="button">Trigger delivery ↗</button>
+                </div>
+              </div>
+
+              <div class="stadium-visual" data-camera="full">
+                <div class="stadium-photo" role="img" aria-label="Original concept artwork of a packed cricket stadium in Pomona with the San Gabriel Mountains behind it"></div>
+                <canvas id="stadium-canvas" width="1200" height="680" aria-label="Animated cricket trajectory layer"></canvas>
+                <div class="stage-vignette" aria-hidden="true"></div>
+
+                <div class="broadcast-bug">
+                  <span class="signal-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <span>WORLD FEED · POMONA</span>
+                  <small>UNOFFICIAL SIMULATION</small>
+                </div>
+
+                <div class="session-chip">
+                  <span>SESSION 01</span>
+                  <strong>JUL 2028 · 09:00</strong>
+                </div>
+
+                <div class="score-ribbon">
+                  <div class="team-block hero-team">
+                    <span class="team-code" id="hero-code">RSA</span>
+                    <div>
+                      <small>ROAD TO GOLD</small>
+                      <strong id="hero-name">South Africa</strong>
+                    </div>
                   </div>
-                  <div class="vs-badge">VS</div>
-                  <div class="hud-team opp">
-                    <span class="flag-icon" id="opp-flag">🇦🇺</span>
-                    <span class="team-name" id="opp-name">Australia</span>
-                    <span class="overs-count" id="match-overs-val">Over 4.5 / 20</span>
+                  <div class="score-block">
+                    <strong id="match-score-runs">45/2</strong>
+                    <span id="match-overs-val">OVER 4 / 20</span>
+                  </div>
+                  <div class="team-block opponent-team">
+                    <span class="team-code" id="opp-code">AUS</span>
+                    <div>
+                      <small>OPPOSITION</small>
+                      <strong id="opp-name">Australia</strong>
+                    </div>
+                  </div>
+                  <div class="phase-block">
+                    <small>TOURNAMENT</small>
+                    <strong id="current-phase-badge">Group match 1</strong>
                   </div>
                 </div>
-                
-                <div class="hud-surprise-banner" id="surprise-banner" style="display:none;">
-                  <span class="alert-icon">✨</span>
-                  <span id="surprise-text">A silent spaceship crosses the night sky!</span>
+
+                <div class="surprise-banner" id="surprise-banner" hidden>
+                  <span class="surprise-orbit" aria-hidden="true"></span>
+                  <div>
+                    <small>ANOMALY ON THE WORLD FEED</small>
+                    <strong id="surprise-text">The mysterious couch reaches the boundary.</strong>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Over Progress Dots & Event Bar -->
-            <div class="over-balls-bar">
-              <span class="bar-label">Current Over:</span>
-              <div class="balls-sequence" id="balls-sequence-container">
-                <span class="ball-dot dot-run">1</span>
-                <span class="ball-dot dot-four">4</span>
-                <span class="ball-dot dot-dot">•</span>
-                <span class="ball-dot dot-six">6</span>
-                <span class="ball-dot dot-wicket">W</span>
-                <span class="ball-dot current">2</span>
+              <div class="delivery-strip">
+                <span class="strip-label">CURRENT OVER</span>
+                <div class="balls-sequence" id="balls-sequence-container">
+                  <span class="ball-dot dot-run">1</span>
+                  <span class="ball-dot dot-four">4</span>
+                  <span class="ball-dot dot-dot">•</span>
+                  <span class="ball-dot dot-six">6</span>
+                  <span class="ball-dot dot-wicket">W</span>
+                  <span class="ball-dot current">2</span>
+                </div>
+                <div class="wind-readout"><span>WIND</span><strong>W 6 MPH</strong><small>SIM</small></div>
               </div>
-              <div class="phase-tag" id="current-phase-badge">Group Match 1</div>
-            </div>
+            </article>
+
+            <aside class="live-desk">
+              <div class="desk-header-strip">
+                <div>
+                  <p class="eyebrow">PRODUCER'S PICK</p>
+                  <h3>Winning call</h3>
+                </div>
+                <span class="over-chip">OVER <b id="winning-over-num">5</b></span>
+              </div>
+
+              <div class="winner-commentary-box">
+                <div class="commentary-quote">“</div>
+                <p id="winning-commentary-text">
+                  The boundary opens beneath the San Gabriels and Pomona rises as one.
+                </p>
+                <div class="speaker-row">
+                  <span class="desk-orb"></span>
+                  <strong id="winning-desk-name">Awaiting model desk</strong>
+                </div>
+                <div class="commentary-meta">
+                  <span id="winning-cqi">CQI 00</span>
+                  <span id="winning-engagement">ENG 00</span>
+                  <span id="winning-speed">0.0 tok/s</span>
+                </div>
+              </div>
+
+              <div class="h2h-widget">
+                <div class="widget-heading">
+                  <span>OVER WINS</span>
+                  <strong id="judge-winner-badge">Independent judge</strong>
+                </div>
+                <div class="h2h-progress-bar">
+                  <div class="h2h-fill desk-a" id="h2h-bar-a" style="width: 50%">A 50%</div>
+                  <div class="h2h-fill desk-b" id="h2h-bar-b" style="width: 50%">B 50%</div>
+                </div>
+              </div>
+
+              <div class="model-race">
+                <div class="race-line">
+                  <span class="race-dot a"></span>
+                  <div><small>DESK A</small><strong id="sidebar-model-a">Model A</strong></div>
+                  <b id="sidebar-speed-a">—</b>
+                </div>
+                <div class="race-line">
+                  <span class="race-dot b"></span>
+                  <div><small>DESK B</small><strong id="sidebar-model-b">Model B</strong></div>
+                  <b id="sidebar-speed-b">—</b>
+                </div>
+              </div>
+            </aside>
           </div>
 
-          <!-- Right Column: Live Commentary & Winner Highlight -->
-          <div class="commentary-sidebar-card">
-            <div class="card-title">
-              <h3>🏆 Winning Commentary (Over <span id="winning-over-num">5</span>)</h3>
-              <span class="judge-badge" id="judge-winner-badge">Judge: Desk B (Qwen3)</span>
-            </div>
-
-            <div class="winner-commentary-box">
-              <div class="speaker-label" id="winning-desk-name">Qwen3 — Olympic Analysis Desk</div>
-              <p class="commentary-text" id="winning-commentary-text">
-                "Live commentary by Desk B. A towering six clears the boundary fence under the stadium floodlights! The crowd is on their feet waving flags!"
-              </p>
-              <div class="commentary-meta">
-                <span class="meta-tag" id="winning-cqi">CQI: 88/100</span>
-                <span class="meta-tag" id="winning-engagement">Engagement: 92%</span>
-                <span class="meta-tag" id="winning-speed">45 tok/s</span>
+          <div class="journey-grid">
+            <article class="journey-card">
+              <div class="journey-copy">
+                <p class="eyebrow">THE SEVEN-MATCH TEST</p>
+                <h3>South Africa's fictional road to the top</h3>
+                <p>
+                  Outcomes are hidden from both desks. The journey is staged now; the benchmark
+                  remains open until official 2028 scorecards can crown the most accurate model.
+                </p>
               </div>
-            </div>
-
-            <!-- Quick Head to Head Running Score -->
-            <div class="h2h-mini-widget">
-              <div class="widget-header">Head-to-Head Over Victories</div>
-              <div class="h2h-progress-bar">
-                <div class="h2h-fill desk-a" id="h2h-bar-a" style="width: 55%;">Desk A (55%)</div>
-                <div class="h2h-fill desk-b" id="h2h-bar-b" style="width: 45%;">Desk B (45%)</div>
+              <div class="route-track" id="route-track">
+                <div class="route-stop active"><span>01</span><b>GROUP</b><small>Australia</small></div>
+                <div class="route-stop"><span>02</span><b>GROUP</b><small>Great Britain</small></div>
+                <div class="route-stop"><span>03</span><b>GROUP</b><small>India</small></div>
+                <div class="route-stop"><span>04</span><b>GROUP</b><small>Qualifier</small></div>
+                <div class="route-stop"><span>05</span><b>GROUP</b><small>Qualifier</small></div>
+                <div class="route-stop"><span>06</span><b>SEMI</b><small>India</small></div>
+                <div class="route-stop"><span>07</span><b>FINAL</b><small>Australia</small></div>
               </div>
-            </div>
+            </article>
+
+            <article class="venue-card cricket-card">
+              <span class="venue-number">01</span>
+              <p class="eyebrow">OFFICIAL VENUE FACT</p>
+              <h3>Pomona · Cricket</h3>
+              <p>Purpose-built Fairgrounds Cricket Stadium with the San Gabriel Mountains as its horizon.</p>
+              <a href="https://la28.org/en/games-plan/venues/fairgrounds-cricket-stadium.html" target="_blank" rel="noreferrer">Read the venue plan ↗</a>
+            </article>
+
+            <article class="venue-card equestrian-card">
+              <span class="venue-number">02</span>
+              <p class="eyebrow">ACROSS THE GAMES</p>
+              <h3>Arcadia · Equestrian</h3>
+              <p>Santa Anita Park carries the equestrian signal across Los Angeles County.</p>
+              <a href="https://la28.org/en/newsroom/la28-celebrates-updated-olympic-venue-plan.html" target="_blank" rel="noreferrer">Explore the venue plan ↗</a>
+            </article>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- TAB 2: BROADCAST DESKS COMPARISON -->
-      <section id="tab-desks" class="tab-panel">
-        <div class="desks-comparison-grid">
-          <!-- Desk A Card -->
-          <div class="desk-card desk-a-card">
-            <div class="desk-header">
-              <div class="desk-title">
-                <span class="desk-badge badge-a">DESK A</span>
-                <h2>qwen/qwen2.5-coder-14b</h2>
-              </div>
-              <span class="org-sub">Southern Hemisphere Sports Network</span>
+        <section id="tab-desks" class="tab-panel">
+          <div class="section-kicker">
+            <div>
+              <p class="eyebrow coral">INDEPENDENT BROADCAST ORGANIZATIONS</p>
+              <h2>Same match. Separate minds.</h2>
             </div>
+            <p>No desk sees the other's call or any hidden outcome. The sampling baseline stays fixed.</p>
+          </div>
 
-            <div class="desk-body">
-              <div class="commentary-bubble">
-                <div class="bubble-title">Latest Over Commentary</div>
-                <p id="desk-a-text">Awaiting over delivery commentary from Desk A...</p>
+          <div class="desks-comparison-grid">
+            <article class="desk-card desk-a-card">
+              <div class="desk-card-header">
+                <span class="desk-letter">A</span>
+                <div><small>PRIMARY BROADCAST</small><h3 id="desk-a-model">Model A</h3></div>
+                <span class="independent-pill">ISOLATED</span>
               </div>
-
-              <div class="predictions-block">
-                <h4>Prediction Locks (Over 1 Pre-Game)</h4>
-                <div class="pred-row">
-                  <span>Next Match Winner:</span>
-                  <strong id="desk-a-pred-next">South Africa (85%)</strong>
-                </div>
-                <div class="pred-row">
-                  <span>LA28 Gold Winner:</span>
-                  <strong id="desk-a-pred-final">South Africa (90%)</strong>
-                </div>
+              <p class="latest-label">LATEST OVER CALL</p>
+              <blockquote id="desk-a-text">Awaiting Desk A commentary…</blockquote>
+              <div class="prediction-locks">
+                <div><span>NEXT MATCH</span><strong id="desk-a-pred-next">LOCK PENDING</strong></div>
+                <div><span>GOLD MEDAL</span><strong id="desk-a-pred-final">LOCK PENDING</strong></div>
               </div>
-
               <div class="metrics-mini-grid">
-                <div class="m-card"><span class="m-val" id="desk-a-cqi">78</span><span class="m-lbl">CQI Quality</span></div>
-                <div class="m-card"><span class="m-val" id="desk-a-eng">82</span><span class="m-lbl">Engagement</span></div>
-                <div class="m-card"><span class="m-val" id="desk-a-brier">0.035</span><span class="m-lbl">Brier Calibration</span></div>
-                <div class="m-card"><span class="m-val" id="desk-a-toks">42.1</span><span class="m-lbl">tok/s</span></div>
+                <div><strong id="desk-a-cqi">—</strong><span>CQI</span></div>
+                <div><strong id="desk-a-eng">—</strong><span>ENG</span></div>
+                <div><strong id="desk-a-brier">—</strong><span>BRIER</span></div>
+                <div><strong id="desk-a-toks">—</strong><span>TOK/S</span></div>
               </div>
-            </div>
-          </div>
+            </article>
 
-          <!-- Desk B Card -->
-          <div class="desk-card desk-b-card">
-            <div class="desk-header">
-              <div class="desk-title">
-                <span class="desk-badge badge-b">DESK B</span>
-                <h2>qwen/qwen3-coder-30b</h2>
+            <article class="desk-card desk-b-card">
+              <div class="desk-card-header">
+                <span class="desk-letter">B</span>
+                <div><small>OLYMPIC ANALYSIS</small><h3 id="desk-b-model">Model B</h3></div>
+                <span class="independent-pill">ISOLATED</span>
               </div>
-              <span class="org-sub">Olympic Cricket Analysis Desk</span>
-            </div>
-
-            <div class="desk-body">
-              <div class="commentary-bubble">
-                <div class="bubble-title">Latest Over Commentary</div>
-                <p id="desk-b-text">Awaiting over delivery commentary from Desk B...</p>
+              <p class="latest-label">LATEST OVER CALL</p>
+              <blockquote id="desk-b-text">Awaiting Desk B commentary…</blockquote>
+              <div class="prediction-locks">
+                <div><span>NEXT MATCH</span><strong id="desk-b-pred-next">LOCK PENDING</strong></div>
+                <div><span>GOLD MEDAL</span><strong id="desk-b-pred-final">LOCK PENDING</strong></div>
               </div>
-
-              <div class="predictions-block">
-                <h4>Prediction Locks (Over 1 Pre-Game)</h4>
-                <div class="pred-row">
-                  <span>Next Match Winner:</span>
-                  <strong id="desk-b-pred-next">South Africa (88%)</strong>
-                </div>
-                <div class="pred-row">
-                  <span>LA28 Gold Winner:</span>
-                  <strong id="desk-b-pred-final">South Africa (92%)</strong>
-                </div>
-              </div>
-
               <div class="metrics-mini-grid">
-                <div class="m-card"><span class="m-val" id="desk-b-cqi">86</span><span class="m-lbl">CQI Quality</span></div>
-                <div class="m-card"><span class="m-val" id="desk-b-eng">89</span><span class="m-lbl">Engagement</span></div>
-                <div class="m-card"><span class="m-val" id="desk-b-brier">0.028</span><span class="m-lbl">Brier Calibration</span></div>
-                <div class="m-card"><span class="m-val" id="desk-b-toks">38.4</span><span class="m-lbl">tok/s</span></div>
+                <div><strong id="desk-b-cqi">—</strong><span>CQI</span></div>
+                <div><strong id="desk-b-eng">—</strong><span>ENG</span></div>
+                <div><strong id="desk-b-brier">—</strong><span>BRIER</span></div>
+                <div><strong id="desk-b-toks">—</strong><span>TOK/S</span></div>
               </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="tab-telemetry" class="tab-panel">
+          <div class="section-kicker">
+            <div>
+              <p class="eyebrow coral">AUDITABLE PERFORMANCE</p>
+              <h2>Speed is visible. Accuracy waits for 2028.</h2>
+            </div>
+            <p>Every inference call records endpoint role, sampling request, latency, tokens, and retries.</p>
+          </div>
+
+          <div class="telemetry-grid">
+            <article class="chart-card">
+              <div class="card-heading"><h3>Model scorecard</h3><span>LIVE / LOCKED</span></div>
+              <div class="metric-bars">
+                <div class="bar-group">
+                  <label><span>Next-match prediction accuracy</span><small>OFFICIAL AUDIT PENDING</small></label>
+                  <div class="bar-pair"><div class="bar bar-a" id="radar-acc-next-a" style="width: 0%">A</div><div class="bar bar-b" id="radar-acc-next-b" style="width: 0%">B</div></div>
+                </div>
+                <div class="bar-group">
+                  <label><span>Gold-medal prediction accuracy</span><small>OFFICIAL AUDIT PENDING</small></label>
+                  <div class="bar-pair"><div class="bar bar-a" id="radar-acc-gold-a" style="width: 0%">A</div><div class="bar bar-b" id="radar-acc-gold-b" style="width: 0%">B</div></div>
+                </div>
+                <div class="bar-group">
+                  <label><span>Commentary Quality Index</span><small>0–100</small></label>
+                  <div class="bar-pair"><div class="bar bar-a" id="radar-cqi-a" style="width: 0%">A</div><div class="bar bar-b" id="radar-cqi-b" style="width: 0%">B</div></div>
+                </div>
+                <div class="bar-group">
+                  <label><span>Mean throughput</span><small>TOKENS / SECOND</small></label>
+                  <div class="bar-pair"><div class="bar bar-a" id="radar-speed-a" style="width: 0%">A</div><div class="bar bar-b" id="radar-speed-b" style="width: 0%">B</div></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="provenance-card">
+              <div class="card-heading"><h3>Run provenance</h3><span>FORMAT 1.1</span></div>
+              <dl class="provenance-list">
+                <div><dt>Run ID</dt><dd id="spec-run-id">Demo simulation</dd></div>
+                <div><dt>Prompt spec</dt><dd id="spec-prompt-version">Fixed baseline</dd></div>
+                <div><dt>Sampling</dt><dd>temp 0.2 · top_p 0.9 · seed 42</dd></div>
+                <div><dt>Desk A endpoint</dt><dd id="spec-endpoint-a">Configurable</dd></div>
+                <div><dt>Desk B endpoint</dt><dd id="spec-endpoint-b">Configurable</dd></div>
+                <div><dt>Hallucination flags</dt><dd id="hallucination-count-tag" class="good-state">0 flagged</dd></div>
+              </dl>
+              <div class="audit-lock">
+                <span class="lock-glyph">⌁</span>
+                <div><strong>Prediction ledger locked</strong><p>Official scorecards can be imported after the 2028 tournament.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="tab-production" class="tab-panel">
+          <div class="section-kicker">
+            <div>
+              <p class="eyebrow coral">OPTIONAL BROADCAST LAYER</p>
+              <h2>Take the model race to air.</h2>
+            </div>
+            <p>The benchmark is the product. These transparent feeds are an optional production surface.</p>
+          </div>
+          <div class="production-grid">
+            <article class="production-hero">
+              <span class="production-index">TX / 01</span>
+              <h3>One source of truth.<br />Six live surfaces.</h3>
+              <p>Score, commentary, predictions, alerts, leaderboard, and timeline all read the same benchmark ledger.</p>
+              <div class="signal-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </article>
+            <div class="overlay-list">
+              <button class="overlay-row btn-copy" data-url="http://localhost:8080/obs/scoreboard"><span>01</span><b>Score ribbon</b><small>/obs/scoreboard</small></button>
+              <button class="overlay-row btn-copy" data-url="http://localhost:8080/obs/ticker"><span>02</span><b>World ticker</b><small>/obs/ticker</small></button>
+              <button class="overlay-row btn-copy" data-url="http://localhost:8080/obs/predictions"><span>03</span><b>Prediction locks</b><small>/obs/predictions</small></button>
+              <button class="overlay-row btn-copy" data-url="http://localhost:8080/obs/commentary"><span>04</span><b>Winning call</b><small>/obs/commentary</small></button>
+              <button class="overlay-row btn-copy" data-url="http://localhost:8080/obs/alerts"><span>05</span><b>World anomalies</b><small>/obs/alerts</small></button>
+              <button class="overlay-row btn-copy" data-url="http://localhost:8080/obs/leaderboard"><span>06</span><b>Model leaderboard</b><small>/obs/leaderboard</small></button>
             </div>
           </div>
+        </section>
+      </main>
+
+      <footer class="studio-footer">
+        <div>
+          <strong>LA 2028 CRICKET MODEL LAB</strong>
+          <span>Open, hardware-agnostic, and endpoint-agnostic.</span>
         </div>
-      </section>
-
-      <!-- TAB 3: MODEL BENCHMARK RADAR & METRICS -->
-      <section id="tab-telemetry" class="tab-panel">
-        <div class="telemetry-grid">
-          <div class="chart-card">
-            <h3>📈 Model Performance Radar Comparison</h3>
-            <div class="radar-bars-container">
-              <div class="bar-group">
-                <label>Next-Match Prediction Accuracy (%)</label>
-                <div class="bar-pair">
-                  <div class="bar bar-a" id="radar-acc-next-a" style="width: 85%;">Desk A (85%)</div>
-                  <div class="bar bar-b" id="radar-acc-next-b" style="width: 100%;">Desk B (100%)</div>
-                </div>
-              </div>
-
-              <div class="bar-group">
-                <label>Gold Medal Winner Accuracy (%)</label>
-                <div class="bar-pair">
-                  <div class="bar bar-a" id="radar-acc-gold-a" style="width: 100%;">Desk A (100%)</div>
-                  <div class="bar bar-b" id="radar-acc-gold-b" style="width: 100%;">Desk B (100%)</div>
-                </div>
-              </div>
-
-              <div class="bar-group">
-                <label>Brier Score Calibration (Lower is Better)</label>
-                <div class="bar-pair">
-                  <div class="bar bar-a" id="radar-brier-a" style="width: 30%;">Desk A (0.035)</div>
-                  <div class="bar bar-b" id="radar-brier-b" style="width: 22%;">Desk B (0.024)</div>
-                </div>
-              </div>
-
-              <div class="bar-group">
-                <label>Commentary Quality Index (CQI 0-100)</label>
-                <div class="bar-pair">
-                  <div class="bar bar-a" id="radar-cqi-a" style="width: 78%;">Desk A (78)</div>
-                  <div class="bar bar-b" id="radar-cqi-b" style="width: 88%;">Desk B (88)</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="hardware-specs-card">
-            <h3>⚙️ Experiment & Telemetry Provenance</h3>
-            <ul class="spec-list">
-              <li><strong>Inference Endpoint:</strong> <span id="spec-endpoint-val">OpenAI-Compatible API Endpoint</span></li>
-              <li><strong>Client Environment:</strong> <span id="spec-client-val">Universal Benchmark Client</span></li>
-              <li><strong>Sampling Baseline:</strong> temp=0.2, top_p=0.9, seed=42</li>
-              <li><strong>Prompt Spec:</strong> Fixed v1.0 strict baseline template</li>
-              <li><strong>Hallucination Status:</strong> <span id="hallucination-count-tag" class="tag-green">0 Flags Detected</span></li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB 4: OBS STREAM PRODUCER SUITE -->
-      <section id="tab-obs-producer" class="tab-panel">
-        <div class="obs-producer-grid">
-          <div class="obs-header-box">
-            <h2>🎥 OBS Streamer Overlay Studio</h2>
-            <p>Load any route directly into an <strong>OBS Browser Source</strong> for live broadcast integration. All overlays feature transparent backgrounds and CSS animations.</p>
-          </div>
-
-          <div class="overlay-cards-grid">
-            <div class="overlay-card">
-              <div class="overlay-icon">🏏</div>
-              <h4>Scoreboard Bar</h4>
-              <p>Transparent live scoreboard with flip score transitions.</p>
-              <code>http://localhost:8080/obs/scoreboard</code>
-              <button class="btn-copy" data-url="http://localhost:8080/obs/scoreboard">Copy URL</button>
-            </div>
-
-            <div class="overlay-card">
-              <div class="overlay-icon">📰</div>
-              <h4>ESPN Ticker</h4>
-              <p>Bottom scrolling news ticker with live game events.</p>
-              <code>http://localhost:8080/obs/ticker</code>
-              <button class="btn-copy" data-url="http://localhost:8080/obs/ticker">Copy URL</button>
-            </div>
-
-            <div class="overlay-card">
-              <div class="overlay-icon">🔮</div>
-              <h4>Desk Predictions</h4>
-              <p>Side-by-side prediction bars with animated glow.</p>
-              <code>http://localhost:8080/obs/predictions</code>
-              <button class="btn-copy" data-url="http://localhost:8080/obs/predictions">Copy URL</button>
-            </div>
-
-            <div class="overlay-card">
-              <div class="overlay-icon">✍️</div>
-              <h4>Typewriter Commentary</h4>
-              <p>Character-by-character commentary feed overlay.</p>
-              <code>http://localhost:8080/obs/commentary</code>
-              <button class="btn-copy" data-url="http://localhost:8080/obs/commentary">Copy URL</button>
-            </div>
-
-            <div class="overlay-card">
-              <div class="overlay-icon">🚨</div>
-              <h4>Breaking News Alerts</h4>
-              <p>Popups for boundary couch, spaceship & milestone events.</p>
-              <code>http://localhost:8080/obs/alerts</code>
-              <button class="btn-copy" data-url="http://localhost:8080/obs/alerts">Copy URL</button>
-            </div>
-
-            <div class="overlay-card">
-              <div class="overlay-icon">🏆</div>
-              <h4>Model Leaderboard</h4>
-              <p>Live metrics leaderboard comparing Desk A vs Desk B.</p>
-              <code>http://localhost:8080/obs/leaderboard</code>
-              <button class="btn-copy" data-url="http://localhost:8080/obs/leaderboard">Copy URL</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="studio-footer">
-      <div>LA28 Women's Cricket LLM Benchmark — Fictional Ground Truth Simulation</div>
-      <div>Universal LLM Broadcast Studio | Powered by Vite & HTML5 Canvas</div>
-    </footer>
-  </div>
-
-  <script type="module" src="/src/main.js"></script>
-</body>
+        <p>
+          Unofficial research simulation. Not affiliated with the IOC, LA28, national teams, or venue
+          operators. Venue facts link to official LA28 sources; weather, traffic, attendance, matchups,
+          commentary, and outcomes shown here are simulated.
+        </p>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
