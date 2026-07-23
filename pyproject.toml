@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "la28-cricket-benchmark"
 version = "1.0.0"
-description = "Fictional LA28 Women's Cricket LLM Benchmark for RTX 4060 Inference Server"
+description = "Universal Fictional LA28 Women's Cricket LLM Benchmark for OpenAI-Compatible Inference Endpoints"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}

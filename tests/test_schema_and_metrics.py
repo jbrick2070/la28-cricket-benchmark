@@ -133,11 +133,11 @@ class TestMetricsAndSchema(unittest.TestCase):
         meta = RunMetadata(
             run_id="test_run",
             timestamp=iso_timestamp(),
-            endpoint="http://10.55.0.2:1234/v1",
+            endpoint="http://localhost:1234/v1",
             prompt_version="v1.0",
             sampling_baseline={"temperature": 0.2},
-            inference_server_hw="Remote RTX 4060",
-            client_dashboard_hw="Lenovo RTX 5080",
+            inference_server_hw="OpenAI-Compatible Inference Server",
+            client_dashboard_hw="Benchmark Client Machine",
             models_configured=["m1", "m2"],
             is_dry_run=True,
         )

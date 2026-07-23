@@ -1,4 +1,4 @@
-"""HTTP Client wrapper for remote RTX 4060 LM Studio inference server with strict baseline sampling and dry-run support."""
+"""HTTP Client wrapper for OpenAI-compatible LLM inference servers with strict baseline sampling and dry-run support."""
 from __future__ import annotations
 
 import hashlib
