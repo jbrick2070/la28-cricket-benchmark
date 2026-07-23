@@ -12,6 +12,10 @@ from typing import Any, Dict, List, Optional
 from la28_cricket.config import (
     CLIENT_DASHBOARD_HW,
     DEFAULT_ENDPOINT,
+    ENDPOINT_A,
+    ENDPOINT_B,
+    API_KEY_A,
+    API_KEY_B,
     DESK_ORGS,
     FIXED_SAMPLING_BASELINE,
     HERO_TEAM,
@@ -67,14 +71,24 @@ class LA28CricketBenchmark:
         log_path: str = "logs/la28_cricket_benchmark.jsonl",
         dry_run: bool = False,
         delay_seconds: float = 0.5,
+        endpoint_a: Optional[str] = None,
+        endpoint_b: Optional[str] = None,
+        api_key_a: Optional[str] = None,
+        api_key_b: Optional[str] = None,
+        domain: str = "cricket",
     ) -> None:
         self.endpoint = endpoint
+        self.endpoint_a = endpoint_a or ENDPOINT_A
+        self.endpoint_b = endpoint_b or ENDPOINT_B
+        self.api_key_a = api_key_a or API_KEY_A
+        self.api_key_b = api_key_b or API_KEY_B
         self.model_a = model_a
         self.model_b = model_b
         self.judge_model = judge_model or model_b
         self.log_path = Path(log_path)
         self.dry_run = dry_run
         self.delay_seconds = delay_seconds
+        self.domain = domain.lower()
 
         self.run_id = f"run_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -165,11 +179,15 @@ class LA28CricketBenchmark:
                         "a warm, exciting sports TV commentator. Be culturally respectful."
                     )
 
+                    model_endpoint = self.endpoint_a if model_id == self.model_a else self.endpoint_b
+                    model_api_key = self.api_key_a if model_id == self.model_a else self.api_key_b
+
                     t_res = call_inference_endpoint(
                         model=model_id,
                         system_prompt=sys_prompt,
                         user_prompt=desk_prompt,
-                        endpoint=self.endpoint,
+                        endpoint=model_endpoint,
+                        api_key=model_api_key,
                         sampling_params=FIXED_SAMPLING_BASELINE,
                         dry_run=self.dry_run,
                     )

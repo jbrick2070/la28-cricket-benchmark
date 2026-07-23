@@ -80,8 +80,13 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Run in mock dry-run mode without network requests")
     parser.add_argument("--check-models", action="store_true", help="Query /v1/models on endpoint before starting")
     parser.add_argument("--endpoint", default=DEFAULT_ENDPOINT, help="Remote inference server endpoint URL")
+    parser.add_argument("--endpoint-a", default=None, help="Specific endpoint URL for Desk A (overrides --endpoint)")
+    parser.add_argument("--endpoint-b", default=None, help="Specific endpoint URL for Desk B (overrides --endpoint)")
+    parser.add_argument("--api-key-a", default=None, help="API Key for Desk A model endpoint")
+    parser.add_argument("--api-key-b", default=None, help="API Key for Desk B model endpoint")
     parser.add_argument("--model-a", default=PREFERRED_MODEL_A, help="Desk A model ID")
     parser.add_argument("--model-b", default=PREFERRED_MODEL_B, help="Desk B model ID")
+    parser.add_argument("--domain", default="cricket", choices=["cricket", "basketball", "soccer", "esports"], help="Benchmark domain preset")
     parser.add_argument("--overs", type=int, default=None, help="Override total overs to run")
     parser.add_argument("--delay", type=float, default=0.1, help="Delay between overs in seconds")
     parser.add_argument("--log-path", default="logs/la28_cricket_benchmark.jsonl", help="Output JSONL log path")
@@ -95,10 +100,11 @@ def main() -> int:
         if args.dry_run:
             print("WARNING: --check-models is silently skipped in --dry-run mode.")
         else:
-            print(f"Querying models from {args.endpoint}...")
+            ep = args.endpoint_a or args.endpoint
+            print(f"Querying models from {ep}...")
             try:
                 from la28_cricket.models import query_remote_models
-                available_models = query_remote_models(args.endpoint)
+                available_models = query_remote_models(ep)
                 print(f"Remote models returned ({len(available_models)}):")
                 for m in available_models:
                     print(f" - {m}")
@@ -112,11 +118,16 @@ def main() -> int:
     if args.obs_port:
         start_obs_server(args.obs_port)
 
-    print(f"Starting LA28 Cricket Benchmark (dry_run={args.dry_run}, endpoint={args.endpoint})...")
+    print(f"Starting LA28 Universal LLM Benchmark (domain={args.domain}, dry_run={args.dry_run}, endpoint={args.endpoint})...")
     benchmark = CLIReportingBenchmark(
         verbose_output=args.verbose,
         no_color=args.no_color,
         endpoint=args.endpoint,
+        endpoint_a=args.endpoint_a,
+        endpoint_b=args.endpoint_b,
+        api_key_a=args.api_key_a,
+        api_key_b=args.api_key_b,
+        domain=args.domain,
         model_a=args.model_a,
         model_b=args.model_b,
         log_path=str(log_path),

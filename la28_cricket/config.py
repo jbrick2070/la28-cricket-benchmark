@@ -5,16 +5,22 @@ from typing import Any, Dict, List, Tuple
 import os
 
 __all__ = [
-    "DEFAULT_ENDPOINT", "INFERENCE_SERVER_HW", "CLIENT_DASHBOARD_HW",
-    "PROMPT_VERSION", "FIXED_SAMPLING_BASELINE", "PREFERRED_MODEL_A",
-    "PREFERRED_MODEL_B", "DESK_ORGS", "HERO_TEAM", "OVERS_PER_MATCH",
-    "TOTAL_MATCHES", "TOTAL_TEAM_OVERS", "SCHEDULE", "SECRET_MATCH_WINNERS",
-    "TEAM_CODES", "OPPONENT_VIBES", "SURPRISE_CYCLE", "get_surprise_for_over",
-    "CRICKET_TERMS", "SENSORY_WORDS", "REAL_PLAYER_NAMES"
+    "DEFAULT_ENDPOINT", "ENDPOINT_A", "ENDPOINT_B", "API_KEY_A", "API_KEY_B",
+    "INFERENCE_SERVER_HW", "CLIENT_DASHBOARD_HW", "PROMPT_VERSION",
+    "FIXED_SAMPLING_BASELINE", "PREFERRED_MODEL_A", "PREFERRED_MODEL_B",
+    "DESK_ORGS", "HERO_TEAM", "OVERS_PER_MATCH", "TOTAL_MATCHES",
+    "TOTAL_TEAM_OVERS", "SCHEDULE", "SECRET_MATCH_WINNERS", "TEAM_CODES",
+    "OPPONENT_VIBES", "SURPRISE_CYCLE", "get_surprise_for_over",
+    "CRICKET_TERMS", "SENSORY_WORDS", "REAL_PLAYER_NAMES", "DOMAIN_PRESETS", "get_domain_preset"
 ]
 
-# Inference Server & Client Specs
+# Heterogeneous Endpoint & API Key Configuration (Per Model Support)
 DEFAULT_ENDPOINT = os.getenv("LA28_ENDPOINT", "http://localhost:1234/v1")
+ENDPOINT_A = os.getenv("LA28_ENDPOINT_A", DEFAULT_ENDPOINT)
+ENDPOINT_B = os.getenv("LA28_ENDPOINT_B", DEFAULT_ENDPOINT)
+API_KEY_A = os.getenv("LA28_API_KEY_A", None)
+API_KEY_B = os.getenv("LA28_API_KEY_B", None)
+
 INFERENCE_SERVER_HW = os.getenv("LA28_SERVER_HW", "OpenAI-Compatible Inference Server")
 CLIENT_DASHBOARD_HW = os.getenv("LA28_CLIENT_HW", "Benchmark Client Machine")
 
@@ -35,8 +41,8 @@ PREFERRED_MODEL_B = os.getenv("LA28_MODEL_B", "qwen/qwen3-coder-30b")
 
 # Broadcast Desks (Independent Models)
 DESK_ORGS = {
-    PREFERRED_MODEL_A: "Qwen2.5 — Southern Hemisphere Sports Network",
-    PREFERRED_MODEL_B: "Qwen3 — Olympic Cricket Analysis Desk",
+    PREFERRED_MODEL_A: "Desk A — Primary Broadcast Network",
+    PREFERRED_MODEL_B: "Desk B — Olympic Analysis Desk",
 }
 
 # Tournament Format
@@ -106,3 +112,37 @@ def get_surprise_for_over(match_no: int, over_no: int) -> str:
     if over_no in (4, 9, 15, 19):
         return SURPRISE_CYCLE[(match_no + over_no) % len(SURPRISE_CYCLE)]
     return "none; keep the broadcast focused on cricket"
+
+
+DOMAIN_PRESETS: Dict[str, Dict[str, Any]] = {
+    "cricket": {
+        "name": "LA28 Women's Cricket",
+        "units_per_match": 20,
+        "unit_name": "over",
+        "terms": CRICKET_TERMS,
+    },
+    "basketball": {
+        "name": "LA28 Olympic Basketball",
+        "units_per_match": 4,
+        "unit_name": "quarter",
+        "terms": ["basket", "three-pointer", "dunk", "rebound", "assist", "steal", "block", "foul", "court", "halftime"],
+    },
+    "soccer": {
+        "name": "LA28 Olympic Soccer",
+        "units_per_match": 2,
+        "unit_name": "half",
+        "terms": ["goal", "penalty", "corner", "offside", "save", "header", "red card", "yellow card", "pitch", "stoppage"],
+    },
+    "esports": {
+        "name": "LA28 Championship Esports",
+        "units_per_match": 5,
+        "unit_name": "game",
+        "terms": ["headshot", "clutch", "plant", "defuse", "ace", "economy", "flank", "round", "map", "strategy"],
+    }
+}
+
+
+def get_domain_preset(domain: str = "cricket") -> Dict[str, Any]:
+    """Return preset details for a given benchmark domain."""
+    domain_low = domain.lower().strip()
+    return DOMAIN_PRESETS.get(domain_low, DOMAIN_PRESETS["cricket"])
