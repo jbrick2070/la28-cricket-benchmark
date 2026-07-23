@@ -448,6 +448,28 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         elif self.path in OVERLAYS:
             self._set_headers("text/html")
             self.wfile.write(OVERLAYS[self.path].encode("utf-8"))
+        elif self.path.startswith("/studio") or self.path.startswith("/assets/"):
+            dist_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+            rel_path = self.path.lstrip("/")
+            if rel_path.startswith("studio"):
+                target = dist_dir / "index.html"
+            else:
+                target = dist_dir / rel_path
+
+            if target.exists() and target.is_file():
+                content_type = "text/html"
+                if target.suffix == ".js":
+                    content_type = "application/javascript"
+                elif target.suffix == ".css":
+                    content_type = "text/css"
+                elif target.suffix == ".json":
+                    content_type = "application/json"
+
+                self._set_headers(content_type)
+                self.wfile.write(target.read_bytes())
+            else:
+                self._set_headers("text/html")
+                self.wfile.write(HTML_TEMPLATE.encode("utf-8"))
         else:
             self._set_headers("text/html")
             self.wfile.write(HTML_TEMPLATE.encode("utf-8"))

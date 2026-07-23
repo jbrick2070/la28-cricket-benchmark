@@ -123,6 +123,33 @@ la28-cricket-benchmark/
 
 ---
 
+## 💻 🖥️ Live Studio Broadcast & Stadium Visualizer App (`frontend/`)
+
+A standalone Vite web application providing a **broadcast-grade visual experience** compatible with Mac, Windows, and Linux.
+
+### Features
+- **🏟️ 2D Stadium Canvas Engine**: Animated stadium under floodlights, shot trajectory arcs (sixes, fours, wickets), Hawk-Eye tracking mode, and fireworks display.
+- **🔊 Web Audio Ambiance & SFX**: Synthesized bat-on-ball crack sound, crowd cheering roars, and stadium background ambiance (zero audio asset dependencies).
+- **🎙️ Web Speech AI Voiceover**: Live commentary text-to-speech engine with distinct pitch/voice profiles for Desk A vs Desk B.
+- **📺 OBS Producer Suite**: Quick access and one-click URL copying for all 7 broadcast overlays.
+- **⚡ Dual Data Mode**: Automatically syncs with Python backend (`http://localhost:8080/api/data`) or falls back to an offline browser simulation.
+
+### Running the Studio App
+
+```bash
+# 1. Navigate to frontend
+cd frontend
+
+# 2. Run local development server
+npm run dev
+# Open http://localhost:5173 in any browser (Mac / Windows / Linux)
+
+# Or serve the production build directly via Python server at http://localhost:8080/studio
+python la28_cricket/dashboard.py --port 8080
+```
+
+---
+
 ## 🛠️ Development Setup
 
 To install the benchmark tools in editable mode with development dependencies:

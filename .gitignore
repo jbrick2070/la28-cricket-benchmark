@@ -49,3 +49,7 @@ Thumbs.db
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
